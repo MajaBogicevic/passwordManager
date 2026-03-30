@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: password-manager-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: password_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - password_manager_data:/var/lib/postgresql/data
+
+volumes:
+  password_manager_data:
