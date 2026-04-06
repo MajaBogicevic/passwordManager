@@ -6,6 +6,7 @@ public class RegisterRequest {
     private String loginPassword;
     private String masterPassword;
     private String notes;
+    private String ipAddress;
 
     public RegisterRequest() {
     }
@@ -15,13 +16,15 @@ public class RegisterRequest {
             String username,
             String loginPassword,
             String masterPassword,
-            String notes
+            String notes,
+            String ipAddress
     ) {
         this.email = email;
         this.username = username;
         this.loginPassword = loginPassword;
         this.masterPassword = masterPassword;
         this.notes = notes;
+        this.ipAddress = ipAddress;
     }
 
     public String getEmail() {
@@ -43,4 +46,9 @@ public class RegisterRequest {
     public String getNotes() {
         return notes;
     }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
 }

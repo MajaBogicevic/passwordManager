@@ -1,5 +1,8 @@
 package org.service.passwordman.application.service.auth;
 
+import java.time.LocalDateTime;
+
+import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
 import org.service.passwordman.application.port.PasswordHasher;
 import org.service.passwordman.application.usecase.auth.RegisterUserUseCase;
@@ -7,22 +10,22 @@ import org.service.passwordman.domain.exception.UserExistsException;
 import org.service.passwordman.domain.model.User;
 import org.service.passwordman.domain.repository.UserRepository;
 
-import java.time.LocalDateTime;
-
 public class RegisterUserService implements RegisterUserUseCase {
 
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
     private final Clock clock;
+    private final AuditLogger auditLogger;
 
-    public RegisterUserService(UserRepository userRepository, PasswordHasher passwordHasher, Clock clock) {
+    public RegisterUserService(UserRepository userRepository, PasswordHasher passwordHasher, Clock clock, AuditLogger auditLogger) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.clock = clock;
+        this.auditLogger = auditLogger; 
     }
-
+    
     @Override
-    public void execute(String email, String username, String loginPassword, String masterPassword, String notes) {
+    public void execute(String email, String username, String loginPassword, String masterPassword, String notes, String ip) {
         if (userRepository.existsByUsername(username)) {
             throw new UserExistsException(username);
         }
@@ -39,6 +42,8 @@ public class RegisterUserService implements RegisterUserUseCase {
                 now,
                 now
         );
+
+        auditLogger.log(user.getId(), "USER_REGISTERED", ip);
 
         userRepository.save(user);
     }

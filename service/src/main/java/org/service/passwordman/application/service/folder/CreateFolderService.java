@@ -31,6 +31,6 @@ public class CreateFolderService implements CreateFolderUseCase {
         Folder folder = new Folder(0, userId, folderName);
         folderRepository.save(folder);
 
-        auditLogger.log(userId, "folder_created", null);
+        auditLogger.log(userId, "FOLDER_CREATED", null);
     }
 }

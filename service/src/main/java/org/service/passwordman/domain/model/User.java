@@ -4,13 +4,13 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class User {
-    private int id;
-    private String email;
-    private String username;
-    private String loginPasswordHash;
-    private String masterPasswordHash;
+    private final int id;
+    private final String email;
+    private final String username;
+    private final String loginPasswordHash;
+    private final String masterPasswordHash;
     private String notes;
-    private LocalDateTime createdAt;
+    private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public User(

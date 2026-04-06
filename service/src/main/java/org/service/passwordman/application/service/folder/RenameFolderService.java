@@ -43,6 +43,6 @@ public class RenameFolderService implements RenameFolderUseCase {
         );
 
         folderRepository.save(renamedFolder);
-        auditLogger.log(userId, "folder_renamed", newName);
+        auditLogger.log(userId, "FOLDER_RENAMED", newName);
     }
 }

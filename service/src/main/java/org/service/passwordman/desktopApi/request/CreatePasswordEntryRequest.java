@@ -8,6 +8,7 @@ public class CreatePasswordEntryRequest {
     private String plainPassword;
     private String notes;
     private int folderId;
+    private String ipAddress;
 
     public CreatePasswordEntryRequest() {
     }
@@ -19,7 +20,8 @@ public class CreatePasswordEntryRequest {
             String username,
             String plainPassword,
             String notes,
-            int folderId
+            int folderId,
+            String ipAddress
     ) {
         this.userId = userId;
         this.title = title;
@@ -28,6 +30,7 @@ public class CreatePasswordEntryRequest {
         this.plainPassword = plainPassword;
         this.notes = notes;
         this.folderId = folderId;
+        this.ipAddress = ipAddress;
     }
 
     public int getUserId() {
@@ -56,5 +59,9 @@ public class CreatePasswordEntryRequest {
 
     public int getFolderId() {
         return folderId;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
     }
 }

@@ -27,6 +27,10 @@ public class GetPasswordEntryService implements GetPasswordEntryUseCase {
             throw new VaultSessionExpiredException();
         }
 
+        if (!vaultSessionStore.isUnlocked(userId)) {
+            throw new VaultSessionExpiredException();
+        }
+
         PasswordEntry entry = passwordEntryRepository.findById(entryId)
                 .orElseThrow(() -> new EntryNotFoundException(String.valueOf(entryId)));
 

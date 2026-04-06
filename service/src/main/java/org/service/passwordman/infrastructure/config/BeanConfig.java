@@ -151,9 +151,10 @@ public class BeanConfig {
     public RegisterUserUseCase registerUserUseCase(
             UserRepository userRepository,
             PasswordHasher passwordHasher,
-            Clock clock
+            Clock clock, 
+            AuditLogger auditLogger
     ) {
-        return new RegisterUserService(userRepository, passwordHasher, clock);
+        return new RegisterUserService(userRepository, passwordHasher, clock, auditLogger);
     }
 
     @Bean

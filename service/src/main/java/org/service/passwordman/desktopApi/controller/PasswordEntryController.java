@@ -2,8 +2,8 @@ package org.service.passwordman.desktopApi.controller;
 
 import org.service.passwordman.desktopApi.handler.PasswordEntryHandler;
 import org.service.passwordman.desktopApi.request.CreatePasswordEntryRequest;
-import org.service.passwordman.desktopApi.request.UpdatePasswordEntryRequest;
 import org.service.passwordman.desktopApi.request.SearchPasswordEntriesRequest;
+import org.service.passwordman.desktopApi.request.UpdatePasswordEntryRequest;
 
 public class PasswordEntryController {
 
@@ -29,20 +29,20 @@ public class PasswordEntryController {
         return passwordEntryHandler.getByFolderSafe(userId, folderId);
     }
 
-    public Object revealPassword(int userId, int entryId) {
-        return passwordEntryHandler.revealPasswordSafe(userId, entryId);
+    public Object revealPassword(int userId, int entryId, String ipAddress) {
+        return passwordEntryHandler.revealPasswordSafe(userId, entryId, ipAddress);
     }
 
-    public Object copyPassword(int userId, int entryId) {
-        return passwordEntryHandler.copyPasswordSafe(userId, entryId);
+    public Object copyPassword(int userId, int entryId, String ipAddress) {
+        return passwordEntryHandler.copyPasswordSafe(userId, entryId, ipAddress);
     }
 
     public Object update(UpdatePasswordEntryRequest request) {
         return passwordEntryHandler.updateSafe(request);
     }
 
-    public Object delete(int userId, int entryId) {
-        return passwordEntryHandler.deleteSafe(userId, entryId);
+    public Object delete(int userId, int entryId, String ipAddress) {
+        return passwordEntryHandler.deleteSafe(userId, entryId, ipAddress);
     }
 
     public Object search(SearchPasswordEntriesRequest request) {

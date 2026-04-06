@@ -75,6 +75,6 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
         );
 
         passwordEntryRepository.save(entry);
-        auditLogger.log(userId, "password_entry_updated", null);
+        auditLogger.log(userId, "PASSWORD_ENTRY_UPDATED", null);
     }
 }

@@ -49,7 +49,8 @@ public class AuthHandler {
                 request.getUsername(),
                 request.getLoginPassword(),
                 request.getMasterPassword(),
-                request.getNotes()
+                request.getNotes(),
+                request.getIpAddress()
         );
 
         return authDesktopMapper.success("User successfully registered.");
@@ -64,7 +65,8 @@ public class AuthHandler {
 
         loginUserUseCase.execute(
                 request.getUsername(),
-                request.getLoginPassword()
+                request.getLoginPassword(),
+                request.getIpAddress()
         );
 
         return authDesktopMapper.success("User successfully logged in.");
@@ -80,7 +82,8 @@ public class AuthHandler {
         changeMasterPasswordUseCase.execute(
                 request.getUserId(),
                 request.getOldMasterPassword(),
-                request.getNewMasterPassword()
+                request.getNewMasterPassword(),
+                request.getIpAddress()
         );
 
         return authDesktopMapper.success("Master password successfully changed.");
@@ -96,7 +99,8 @@ public class AuthHandler {
         changeLoginPasswordUseCase.execute(
                 request.getUserId(),
                 request.getOldLoginPassword(),
-                request.getNewLoginPassword()
+                request.getNewLoginPassword(),
+                request.getIpAddress()
         );
 
         return authDesktopMapper.success("Login password successfully changed.");

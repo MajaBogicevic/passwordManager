@@ -77,7 +77,8 @@ public class PasswordEntryHandler {
                 request.getUsername(),
                 request.getPlainPassword(),
                 request.getNotes(),
-                request.getFolderId()
+                request.getFolderId(),
+                request.getIpAddress()
         );
 
         return new AuthResponse(true, "Password entry successfully created.");
@@ -100,7 +101,9 @@ public class PasswordEntryHandler {
 
     public List<PasswordEntryResponse> getByUser(int userId) {
         if (userId <= 0) {
-            throw new org.service.passwordman.domain.exception.ValidationException("User id must be greater than 0.");
+            throw new org.service.passwordman.domain.exception.ValidationException(
+                    "User id must be greater than 0."
+            );
         }
 
         return getEntriesByUserUseCase.execute(userId)
@@ -126,26 +129,26 @@ public class PasswordEntryHandler {
         return apiHandler.execute(() -> getByFolder(userId, folderId));
     }
 
-    public RevealPasswordResponse revealPassword(int userId, int entryId) {
+    public RevealPasswordResponse revealPassword(int userId, int entryId, String ipAddress) {
         passwordEntryRequestValidator.validateReveal(userId, entryId);
 
-        String password = revealPasswordUseCase.execute(userId, entryId);
+        String password = revealPasswordUseCase.execute(userId, entryId, ipAddress);
         return new RevealPasswordResponse(entryId, password);
     }
 
-    public Object revealPasswordSafe(int userId, int entryId) {
-        return apiHandler.execute(() -> revealPassword(userId, entryId));
+    public Object revealPasswordSafe(int userId, int entryId, String ipAddress) {
+        return apiHandler.execute(() -> revealPassword(userId, entryId, ipAddress));
     }
 
-    public CopyPasswordResponse copyPassword(int userId, int entryId) {
+    public CopyPasswordResponse copyPassword(int userId, int entryId, String ipAddress) {
         passwordEntryRequestValidator.validateReveal(userId, entryId);
 
-        String password = copyPasswordUseCase.execute(userId, entryId);
+        String password = copyPasswordUseCase.execute(userId, entryId, ipAddress);
         return new CopyPasswordResponse(entryId, password, true, "Password successfully prepared for copy.");
     }
 
-    public Object copyPasswordSafe(int userId, int entryId) {
-        return apiHandler.execute(() -> copyPassword(userId, entryId));
+    public Object copyPasswordSafe(int userId, int entryId, String ipAddress) {
+        return apiHandler.execute(() -> copyPassword(userId, entryId, ipAddress));
     }
 
     public AuthResponse update(UpdatePasswordEntryRequest request) {
@@ -169,14 +172,14 @@ public class PasswordEntryHandler {
         return apiHandler.execute(() -> update(request));
     }
 
-    public AuthResponse delete(int userId, int entryId) {
+    public AuthResponse delete(int userId, int entryId, String ipAddress) {
         passwordEntryRequestValidator.validateDelete(userId, entryId);
-        deletePasswordEntryUseCase.execute(userId, entryId);
+        deletePasswordEntryUseCase.execute(userId, entryId, ipAddress);
         return new AuthResponse(true, "Password entry successfully deleted.");
     }
 
-    public Object deleteSafe(int userId, int entryId) {
-        return apiHandler.execute(() -> delete(userId, entryId));
+    public Object deleteSafe(int userId, int entryId, String ipAddress) {
+        return apiHandler.execute(() -> delete(userId, entryId, ipAddress));
     }
 
     public PasswordEntrySearchResponse search(SearchPasswordEntriesRequest request) {

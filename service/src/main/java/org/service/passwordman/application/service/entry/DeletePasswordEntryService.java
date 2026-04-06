@@ -30,7 +30,7 @@ public class DeletePasswordEntryService implements DeletePasswordEntryUseCase {
     }
 
     @Override
-    public void execute(int userId, int entryId) {
+    public void execute(int userId, int entryId, String ipAddress) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
@@ -46,6 +46,6 @@ public class DeletePasswordEntryService implements DeletePasswordEntryUseCase {
         }
 
         passwordEntryRepository.deleteById(entryId);
-        auditLogger.log(userId, "password_entry_deleted", entry.getTitle());
+        auditLogger.log(userId, "PASSWORD_ENTRY_DELETED", ipAddress);
     }
 }

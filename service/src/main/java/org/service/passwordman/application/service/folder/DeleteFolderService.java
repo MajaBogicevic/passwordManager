@@ -46,6 +46,6 @@ public class DeleteFolderService implements DeleteFolderUseCase {
         }
 
         folderRepository.deleteById(folderId);
-        auditLogger.log(userId, "folder_deleted", folder.getName());
+        auditLogger.log(userId, "FOLDER_DELETED", folder.getName());
     }
 }

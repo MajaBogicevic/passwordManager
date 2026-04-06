@@ -29,7 +29,7 @@ public class RevealPasswordService implements RevealPasswordUseCase {
     }
 
     @Override
-    public String execute(int userId, int entryId) {
+    public String execute(int userId, int entryId, String ipAddress) {
         if (userId <= 0) {
             throw new ValidationException("User id must be greater than 0.");
         }
@@ -50,7 +50,7 @@ public class RevealPasswordService implements RevealPasswordUseCase {
         String plainPassword = encryptionService.decrypt(entry.getEncryptedPassword());
 
         autoLockUseCase.refreshActivity(userId);
-        auditLogger.log(userId, "PASSWORD_REVEALED", "localhost");
+        auditLogger.log(userId, "PASSWORD_REVEALED", ipAddress);
 
         return plainPassword;
     }

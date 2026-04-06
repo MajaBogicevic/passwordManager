@@ -36,6 +36,7 @@ public class CreatePasswordEntryService implements CreatePasswordEntryUseCase {
         this.encryptionService = encryptionService;
         this.clock = clock;
         this.auditLogger = auditLogger;
+
     }
 
     @Override
@@ -46,7 +47,8 @@ public class CreatePasswordEntryService implements CreatePasswordEntryUseCase {
             String username,
             String plaintextPassword,
             String notes,
-            int folderId
+            int folderId,
+            String ip
     ) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
@@ -72,6 +74,6 @@ public class CreatePasswordEntryService implements CreatePasswordEntryUseCase {
         );
 
         passwordEntryRepository.save(passwordEntry);
-        auditLogger.log(userId, "password_entry_created", title);
+        auditLogger.log(userId, "PASSWORD_ENTRY_CREATED", ip);
     }
 }

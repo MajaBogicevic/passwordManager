@@ -24,16 +24,22 @@ public class LoginUserService implements LoginUserUseCase {
     }
 
     @Override
-    public void execute(String username, String loginPassword) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new InvalidCredentialsException());
+    public void execute(String username, String loginPassword, String ip) {
+
+        User user = userRepository.findByUsername(username).orElse(null);
+
+        if (user == null) {
+            auditLogger.log(0, "LOGIN_FAILED", ip);
+            throw new InvalidCredentialsException();
+        }
 
         boolean matches = passwordHasher.matches(loginPassword, user.getLoginPasswordHash());
 
         if (!matches) {
+            auditLogger.log(user.getId(), "LOGIN_FAILED", ip);
             throw new InvalidCredentialsException();
         }
 
-        auditLogger.log(user.getId(), "logged_in", null);
+        auditLogger.log(user.getId(), "LOGIN_SUCCESS", ip);
     }
 }

@@ -4,14 +4,16 @@ public class ChangeMasterPasswordRequest {
     private int userId;
     private String oldMasterPassword;
     private String newMasterPassword;
+    private String ipAddress;
 
     public ChangeMasterPasswordRequest() {
     }
 
-    public ChangeMasterPasswordRequest(int userId, String oldMasterPassword, String newMasterPassword) {
+    public ChangeMasterPasswordRequest(int userId, String oldMasterPassword, String newMasterPassword, String ipAddress) {
         this.userId = userId;
         this.oldMasterPassword = oldMasterPassword;
         this.newMasterPassword = newMasterPassword;
+        this.ipAddress = ipAddress;
     }
 
     public int getUserId() {
@@ -24,5 +26,9 @@ public class ChangeMasterPasswordRequest {
 
     public String getNewMasterPassword() {
         return newMasterPassword;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
     }
 }
