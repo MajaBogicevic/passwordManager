@@ -1,0 +1,39 @@
+package org.service.passwordman.application.service.auth;
+
+import org.service.passwordman.application.port.AuditLogger;
+import org.service.passwordman.application.port.PasswordHasher;
+import org.service.passwordman.application.usecase.auth.LoginUserUseCase;
+import org.service.passwordman.domain.exception.InvalidCredentialsException;
+import org.service.passwordman.domain.model.User;
+import org.service.passwordman.domain.repository.UserRepository;
+
+public class LoginUserService implements LoginUserUseCase {
+
+    private final UserRepository userRepository;
+    private final PasswordHasher passwordHasher;
+    private final AuditLogger auditLogger;
+
+    public LoginUserService(
+            UserRepository userRepository,
+            PasswordHasher passwordHasher,
+            AuditLogger auditLogger
+    ) {
+        this.userRepository = userRepository;
+        this.passwordHasher = passwordHasher;
+        this.auditLogger = auditLogger;
+    }
+
+    @Override
+    public void execute(String username, String loginPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new InvalidCredentialsException());
+
+        boolean matches = passwordHasher.matches(loginPassword, user.getLoginPasswordHash());
+
+        if (!matches) {
+            throw new InvalidCredentialsException();
+        }
+
+        auditLogger.log(user.getId(), "logged_in", null);
+    }
+}

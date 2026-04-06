@@ -5,48 +5,52 @@ import java.util.Objects;
 
 public class User {
     private int id;
-    private String name;
-    private String surename;
     private String email;
-    private String LoginPassword;
-    private String masterPassword;
+    private String username;
+    private String loginPasswordHash;
+    private String masterPasswordHash;
     private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public User(int id, String name, String surename, String email, String loginPassword, String masterPassword, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public User(
+            int id,
+            String email,
+            String username,
+            String loginPasswordHash,
+            String masterPasswordHash,
+            String notes,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
         this.id = id;
-        this.name = name;
-        this.surename = surename;
-        this.email = email;
-        this.LoginPassword = loginPassword;
-        this.masterPassword = masterPassword;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.email = Objects.requireNonNull(email);
+        this.username = Objects.requireNonNull(username);
+        this.loginPasswordHash = Objects.requireNonNull(loginPasswordHash);
+        this.masterPasswordHash = Objects.requireNonNull(masterPasswordHash);
+        this.notes = notes;
+        this.createdAt = Objects.requireNonNull(createdAt);
+        this.updatedAt = Objects.requireNonNull(updatedAt);
     }
 
     public int getId() {
         return id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String getSurename() {
-        return surename;
-    }
-
     public String getEmail() {
         return email;
     }
 
-    public String getLoginPassword() {
-        return LoginPassword;
+    public String getUsername() {
+        return username;
     }
 
-    public String getMasterPassword() {
-        return masterPassword;
+    public String getLoginPasswordHash() {
+        return loginPasswordHash;
+    }
+
+    public String getMasterPasswordHash() {
+        return masterPasswordHash;
     }
 
     public String getNotes() {

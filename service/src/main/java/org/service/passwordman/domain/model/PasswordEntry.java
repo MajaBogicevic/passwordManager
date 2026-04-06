@@ -1,30 +1,42 @@
 package org.service.passwordman.domain.model;
 
-import java.util.Objects;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class PasswordEntry {
     private int id;
     private int userId;
     private String title;
+    private String url;
     private String username;
     private String encryptedPassword;
-    private String url;
     private String notes;
     private int folderId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public PasswordEntry(int id, int userId, String title, String username, String encryptedPassword, String url, int folderId, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public PasswordEntry(
+            int id,
+            int userId,
+            String title,
+            String url,
+            String username,
+            String encryptedPassword,
+            String notes,
+            int folderId,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
         this.id = id;
         this.userId = userId;
-        this.title = title;
-        this.username = username;
-        this.encryptedPassword = encryptedPassword;
+        this.title = Objects.requireNonNull(title);
         this.url = url;
+        this.username = Objects.requireNonNull(username);
+        this.encryptedPassword = Objects.requireNonNull(encryptedPassword);
+        this.notes = notes;
         this.folderId = folderId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.createdAt = Objects.requireNonNull(createdAt);
+        this.updatedAt = Objects.requireNonNull(updatedAt);
     }
 
     public int getId() {
@@ -39,16 +51,16 @@ public class PasswordEntry {
         return title;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     public String getUsername() {
         return username;
     }
 
     public String getEncryptedPassword() {
         return encryptedPassword;
-    }
-
-    public String getUrl() {
-        return url;
     }
 
     public String getNotes() {

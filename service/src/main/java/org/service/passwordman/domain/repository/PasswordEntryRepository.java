@@ -10,4 +10,5 @@ public interface PasswordEntryRepository {
     List<PasswordEntry> findByFolderId(int folderId);
     void save(PasswordEntry entry);
     void deleteById(int entryId);
+    List<PasswordEntry> searchByUserIdAndTitle(int userId, String titleQuery);
 }
