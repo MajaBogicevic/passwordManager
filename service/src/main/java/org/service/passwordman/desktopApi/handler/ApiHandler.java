@@ -15,7 +15,7 @@ public class ApiHandler {
     public <T> Object execute(Supplier<T> action) {
         try {
             return action.get();
-        } catch (Throwable ex) {
+        } catch (RuntimeException ex) {
             return errorDesktopMapper.map(ex);
         }
     }

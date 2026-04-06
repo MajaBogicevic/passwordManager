@@ -21,28 +21,28 @@ public class PasswordEntryController {
         return passwordEntryHandler.getSafe(userId, entryId);
     }
 
-    public Object getByUser(int userId) {
-        return passwordEntryHandler.getByUserSafe(userId);
+    public Object getByUser() {
+        return passwordEntryHandler.getByCurrentUserSafe();
     }
 
-    public Object getByFolder(int userId, int folderId) {
-        return passwordEntryHandler.getByFolderSafe(userId, folderId);
+    public Object getByFolder(int folderId) {
+        return passwordEntryHandler.getByFolderSafe(folderId);
     }
 
-    public Object revealPassword(int userId, int entryId, String ipAddress) {
-        return passwordEntryHandler.revealPasswordSafe(userId, entryId, ipAddress);
+    public Object revealPassword(int entryId, String ipAddress) {
+        return passwordEntryHandler.revealPasswordSafe(entryId, ipAddress);
     }
 
-    public Object copyPassword(int userId, int entryId, String ipAddress) {
-        return passwordEntryHandler.copyPasswordSafe(userId, entryId, ipAddress);
+    public Object copyPassword(int entryId, String ipAddress) {
+        return passwordEntryHandler.copyPasswordSafe(entryId, ipAddress);
     }
 
     public Object update(UpdatePasswordEntryRequest request) {
         return passwordEntryHandler.updateSafe(request);
     }
 
-    public Object delete(int userId, int entryId, String ipAddress) {
-        return passwordEntryHandler.deleteSafe(userId, entryId, ipAddress);
+    public Object delete(int entryId, String ipAddress) {
+        return passwordEntryHandler.deleteSafe(entryId, ipAddress);
     }
 
     public Object search(SearchPasswordEntriesRequest request) {

@@ -10,7 +10,7 @@ public class AuditController {
         this.auditHandler = auditHandler;
     }
 
-    public Object getSecurityActivity(int userId) {
-        return auditHandler.getSecurityActivitySafe(userId);
+    public Object getSecurityActivity() {
+        return auditHandler.getSecurityActivitySafe();
     }
 }

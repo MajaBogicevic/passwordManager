@@ -5,5 +5,5 @@ import org.service.passwordman.domain.model.PasswordEntry;
 import java.util.List;
 
 public interface SearchPasswordEntriesUseCase {
-    List<PasswordEntry> execute(int userId, String titleQuery);
+    List<PasswordEntry> execute(int userId, String titleQuery, String jwtTokenId);
 }

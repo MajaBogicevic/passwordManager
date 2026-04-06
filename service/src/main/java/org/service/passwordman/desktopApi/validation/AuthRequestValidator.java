@@ -43,9 +43,6 @@ public class AuthRequestValidator {
         if (request == null) {
             throw new ValidationException("Unlock vault request must not be null.");
         }
-        if (request.getUserId() <= 0) {
-            throw new ValidationException("User id must be greater than 0.");
-        }
         if (isBlank(request.getMasterPassword())) {
             throw new ValidationException("Master password is required.");
         }
@@ -54,9 +51,6 @@ public class AuthRequestValidator {
     public void validateChangeMasterPassword(ChangeMasterPasswordRequest request) {
         if (request == null) {
             throw new ValidationException("Change master password request must not be null.");
-        }
-        if (request.getUserId() <= 0) {
-            throw new ValidationException("User id must be greater than 0.");
         }
         if (isBlank(request.getOldMasterPassword())) {
             throw new ValidationException("Old master password is required.");
@@ -69,9 +63,6 @@ public class AuthRequestValidator {
     public void validateChangeLoginPassword(ChangeLoginPasswordRequest request) {
         if (request == null) {
             throw new ValidationException("Change login password request must not be null.");
-        }
-        if (request.getUserId() <= 0) {
-            throw new ValidationException("User id must be greater than 0.");
         }
         if (isBlank(request.getOldLoginPassword())) {
             throw new ValidationException("Old login password is required.");

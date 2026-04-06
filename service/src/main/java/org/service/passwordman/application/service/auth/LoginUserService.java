@@ -2,10 +2,13 @@ package org.service.passwordman.application.service.auth;
 
 import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.PasswordHasher;
+import org.service.passwordman.application.security.TokenPayload;
 import org.service.passwordman.application.usecase.auth.LoginUserUseCase;
 import org.service.passwordman.domain.exception.InvalidCredentialsException;
 import org.service.passwordman.domain.model.User;
 import org.service.passwordman.domain.repository.UserRepository;
+
+import java.util.UUID;
 
 public class LoginUserService implements LoginUserUseCase {
 
@@ -24,9 +27,10 @@ public class LoginUserService implements LoginUserUseCase {
     }
 
     @Override
-    public void execute(String username, String loginPassword, String ip) {
+    public TokenPayload execute(String username, String loginPassword, String ip) {
 
         User user = userRepository.findByUsername(username).orElse(null);
+        String jwtTokenId = UUID.randomUUID().toString();
 
         if (user == null) {
             auditLogger.log(0, "LOGIN_FAILED", ip);
@@ -41,5 +45,11 @@ public class LoginUserService implements LoginUserUseCase {
         }
 
         auditLogger.log(user.getId(), "LOGIN_SUCCESS", ip);
+
+        return new TokenPayload(
+                user.getId(),
+                user.getUsername(),
+                jwtTokenId
+        );
     }
 }

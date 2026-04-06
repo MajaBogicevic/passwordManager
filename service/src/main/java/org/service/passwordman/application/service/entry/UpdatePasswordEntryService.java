@@ -8,9 +8,11 @@ import org.service.passwordman.application.usecase.entry.UpdatePasswordEntryUseC
 import org.service.passwordman.domain.exception.EntryNotFoundException;
 import org.service.passwordman.domain.exception.UnauthorizedVaultAccessException;
 import org.service.passwordman.domain.exception.VaultSessionExpiredException;
+import org.service.passwordman.domain.exception.FolderNotFoundException;
 import org.service.passwordman.domain.model.PasswordEntry;
 import org.service.passwordman.domain.repository.PasswordEntryRepository;
 import org.service.passwordman.domain.repository.UserRepository;
+import org.service.passwordman.domain.repository.FolderRepository;
 
 public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
 
@@ -20,6 +22,7 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
     private final EncryptionService encryptionService;
     private final Clock clock;
     private final AuditLogger auditLogger;
+    private final FolderRepository folderRepository;
 
     public UpdatePasswordEntryService(
             PasswordEntryRepository passwordEntryRepository,
@@ -27,7 +30,8 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
             VaultSessionStore vaultSessionStore,
             EncryptionService encryptionService,
             Clock clock,
-            AuditLogger auditLogger
+            AuditLogger auditLogger,
+            FolderRepository folderRepository
     ) {
         this.passwordEntryRepository = passwordEntryRepository;
         this.userRepository = userRepository;
@@ -35,6 +39,7 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
         this.encryptionService = encryptionService;
         this.clock = clock;
         this.auditLogger = auditLogger;
+        this.folderRepository = folderRepository;
     }
 
     @Override
@@ -46,20 +51,22 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
             String username,
             String plainPassword,
             String notes,
-            int folderId
+            int folderId,
+            String jwtTokenId
     ) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
-        if (!vaultSessionStore.isUnlocked(userId)) {
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             throw new VaultSessionExpiredException();
         }
 
-        PasswordEntry entry = passwordEntryRepository.findById(entryId)
+        PasswordEntry entry = passwordEntryRepository.findByIdAndUserId(entryId, userId)
                 .orElseThrow(() -> new EntryNotFoundException(String.valueOf(entryId)));
 
-        if (entry.getUserId() != userId) {
-            throw new UnauthorizedVaultAccessException();
+        if (folderId > 0) {
+            folderRepository.findByIdAndUserId(folderId, userId)
+                    .orElseThrow(() -> new FolderNotFoundException(String.valueOf(folderId)));
         }
 
         String encryptedPassword = encryptionService.encrypt(plainPassword);

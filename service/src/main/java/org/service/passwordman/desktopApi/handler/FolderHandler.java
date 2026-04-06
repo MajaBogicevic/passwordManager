@@ -12,6 +12,7 @@ import org.service.passwordman.desktopApi.response.AuthResponse;
 import org.service.passwordman.desktopApi.response.FolderResponse;
 import org.service.passwordman.desktopApi.validation.FolderRequestValidator;
 import org.service.passwordman.domain.model.Folder;
+import org.service.passwordman.infrastructure.security.CurrentUserProvider;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ public class FolderHandler {
     private final FolderDesktopMapper folderDesktopMapper;
     private final FolderRequestValidator folderRequestValidator;
     private final ApiHandler apiHandler;
+    private final CurrentUserProvider currentUserProvider;
 
     public FolderHandler(
             CreateFolderUseCase createFolderUseCase,
@@ -35,7 +37,8 @@ public class FolderHandler {
             DeleteFolderUseCase deleteFolderUseCase,
             FolderDesktopMapper folderDesktopMapper,
             FolderRequestValidator folderRequestValidator,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            CurrentUserProvider currentUserProvider
     ) {
         this.createFolderUseCase = createFolderUseCase;
         this.getFolderUseCase = getFolderUseCase;
@@ -45,11 +48,13 @@ public class FolderHandler {
         this.folderDesktopMapper = folderDesktopMapper;
         this.folderRequestValidator = folderRequestValidator;
         this.apiHandler = apiHandler;
+        this.currentUserProvider = currentUserProvider;
     }
 
     public AuthResponse create(CreateFolderRequest request) {
         folderRequestValidator.validateCreate(request);
-        createFolderUseCase.execute(request.getUserId(), request.getFolderName());
+        int currentUserId = currentUserProvider.requireUserId();
+        createFolderUseCase.execute(currentUserId, request.getFolderName());
         return new AuthResponse(true, "Folder successfully created.");
     }
 
@@ -58,7 +63,8 @@ public class FolderHandler {
     }
 
     public FolderResponse get(int folderId) {
-        Folder folder = getFolderUseCase.execute(folderId);
+        int currentUserId = currentUserProvider.requireUserId();
+        Folder folder = getFolderUseCase.execute(currentUserId, folderId);
         return folderDesktopMapper.toResponse(folder);
     }
 
@@ -66,22 +72,25 @@ public class FolderHandler {
         return apiHandler.execute(() -> get(folderId));
     }
 
-    public List<FolderResponse> getByUser(int userId) {
-        return getFoldersByUserUseCase.execute(userId)
+    public List<FolderResponse> getByUserCurrentUser() {
+        int currentUserId = currentUserProvider.requireUserId();
+        return getFoldersByUserUseCase.execute(currentUserId)
                 .stream()
                 .map(folderDesktopMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public Object getByUserSafe(int userId) {
-        return apiHandler.execute(() -> getByUser(userId));
+    public Object getByUserSafe() {
+        return apiHandler.execute(this::getByUserCurrentUser);
     }
 
     public AuthResponse rename(RenameFolderRequest request) {
         folderRequestValidator.validateRename(request);
 
+        int currentUserId = currentUserProvider.requireUserId();
+
         renameFolderUseCase.execute(
-                request.getUserId(),
+                currentUserId,
                 request.getFolderId(),
                 request.getNewName()
         );
@@ -93,13 +102,14 @@ public class FolderHandler {
         return apiHandler.execute(() -> rename(request));
     }
 
-    public AuthResponse delete(int userId, int folderId) {
-        folderRequestValidator.validateDelete(userId, folderId);
-        deleteFolderUseCase.execute(userId, folderId);
+    public AuthResponse delete(int folderId) {
+        int currentUserId = currentUserProvider.requireUserId();
+        folderRequestValidator.validateDelete(currentUserId, folderId);
+        deleteFolderUseCase.execute(currentUserId, folderId);
         return new AuthResponse(true, "Folder successfully deleted.");
     }
 
-    public Object deleteSafe(int userId, int folderId) {
-        return apiHandler.execute(() -> delete(userId, folderId));
+    public Object deleteSafe(int folderId) {
+        return apiHandler.execute(() -> delete(folderId));
     }
 }

@@ -1,7 +1,6 @@
 package org.service.passwordman.desktopApi.request;
 
 public class ChangeLoginPasswordRequest {
-    private int userId;
     private String oldLoginPassword;
     private String newLoginPassword;
     private String ipAddress;
@@ -9,15 +8,10 @@ public class ChangeLoginPasswordRequest {
     public ChangeLoginPasswordRequest() {
     }
 
-    public ChangeLoginPasswordRequest(int userId, String oldLoginPassword, String newLoginPassword, String ipAddress) {
-        this.userId = userId;
+    public ChangeLoginPasswordRequest(String oldLoginPassword, String newLoginPassword, String ipAddress) {
         this.oldLoginPassword = oldLoginPassword;
         this.newLoginPassword = newLoginPassword;
         this.ipAddress = ipAddress;
-    }
-
-    public int getUserId() {
-        return userId;
     }
 
     public String getOldLoginPassword() {

@@ -28,6 +28,17 @@ public class InMemoryFolderRepository implements FolderRepository {
     }
 
     @Override
+    public Optional<Folder> findByIdAndUserId(int folderId, int userId) {
+        Folder folder = foldersById.get(folderId);
+
+        if (folder == null || folder.getUserId() != userId) {
+            return Optional.empty();
+        }
+
+        return Optional.of(folder);
+    }
+
+    @Override
     public void save(Folder folder) {
         Folder folderToStore = folder;
 

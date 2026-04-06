@@ -30,22 +30,18 @@ public class DeletePasswordEntryService implements DeletePasswordEntryUseCase {
     }
 
     @Override
-    public void execute(int userId, int entryId, String ipAddress) {
+    public void execute(int userId, int entryId, String ipAddress, String jwtTokenId) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
-        if (!vaultSessionStore.isUnlocked(userId)) {
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             throw new VaultSessionExpiredException();
         }
 
-        PasswordEntry entry = passwordEntryRepository.findById(entryId)
+        PasswordEntry entry = passwordEntryRepository.findByIdAndUserId(entryId, userId)
                 .orElseThrow(() -> new EntryNotFoundException(String.valueOf(entryId)));
 
-        if (entry.getUserId() != userId) {
-            throw new UnauthorizedVaultAccessException();
-        }
-
-        passwordEntryRepository.deleteById(entryId);
+        passwordEntryRepository.deleteById(entry.getId());
         auditLogger.log(userId, "PASSWORD_ENTRY_DELETED", ipAddress);
     }
 }

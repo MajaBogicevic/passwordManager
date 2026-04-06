@@ -1,6 +1,8 @@
 package org.service.passwordman.application.usecase.auth;
 
+import org.service.passwordman.application.security.TokenPayload;
+
 public interface LoginUserUseCase {
 
-    void execute(String username, String loginPassword, String ip);
+    TokenPayload execute(String username, String loginPassword, String ip);
 }

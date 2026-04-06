@@ -14,7 +14,6 @@ public class CreatePasswordEntryRequest {
     }
 
     public CreatePasswordEntryRequest(
-            int userId,
             String title,
             String url,
             String username,
@@ -23,7 +22,6 @@ public class CreatePasswordEntryRequest {
             int folderId,
             String ipAddress
     ) {
-        this.userId = userId;
         this.title = title;
         this.url = url;
         this.username = username;
@@ -31,10 +29,6 @@ public class CreatePasswordEntryRequest {
         this.notes = notes;
         this.folderId = folderId;
         this.ipAddress = ipAddress;
-    }
-
-    public int getUserId() {
-        return userId;
     }
 
     public String getTitle() {

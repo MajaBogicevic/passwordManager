@@ -12,7 +12,6 @@ public class PasswordEntryRequestValidator {
             throw new ValidationException("Create password entry request must not be null.");
         }
         validateCommon(
-                request.getUserId(),
                 request.getTitle(),
                 request.getUsername(),
                 request.getPlainPassword(),
@@ -28,7 +27,6 @@ public class PasswordEntryRequestValidator {
             throw new ValidationException("Entry id must be greater than 0.");
         }
         validateCommon(
-                request.getUserId(),
                 request.getTitle(),
                 request.getUsername(),
                 request.getPlainPassword(),
@@ -63,15 +61,11 @@ public class PasswordEntryRequestValidator {
     }
 
     private void validateCommon(
-            int userId,
             String title,
             String username,
             String plainPassword,
             int folderId
     ) {
-        if (userId <= 0) {
-            throw new ValidationException("User id must be greater than 0.");
-        }
         if (isBlank(title)) {
             throw new ValidationException("Title is required.");
         }
@@ -86,21 +80,17 @@ public class PasswordEntryRequestValidator {
         }
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
-    }
-
     public void validateSearch(SearchPasswordEntriesRequest request) {
         if (request == null) {
             throw new ValidationException("Search request must not be null.");
         }
 
-        if (request.getUserId() <= 0) {
-            throw new ValidationException("User id must be greater than 0.");
-        }
-
         if (request.getTitleQuery() == null) {
             throw new ValidationException("Search query must not be null.");
         }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

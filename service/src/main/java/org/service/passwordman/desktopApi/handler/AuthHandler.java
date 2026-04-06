@@ -4,6 +4,9 @@ import org.service.passwordman.application.usecase.auth.ChangeMasterPasswordUseC
 import org.service.passwordman.application.usecase.auth.ChangeLoginPasswordUseCase;
 import org.service.passwordman.application.usecase.auth.LoginUserUseCase;
 import org.service.passwordman.application.usecase.auth.RegisterUserUseCase;
+import org.service.passwordman.application.security.TokenPayload;
+import org.service.passwordman.application.port.TokenService;
+import org.service.passwordman.desktopApi.response.LoginResponse;
 import org.service.passwordman.desktopApi.mapper.AuthDesktopMapper;
 import org.service.passwordman.desktopApi.request.ChangeMasterPasswordRequest;
 import org.service.passwordman.desktopApi.request.ChangeLoginPasswordRequest;
@@ -11,6 +14,7 @@ import org.service.passwordman.desktopApi.request.LoginRequest;
 import org.service.passwordman.desktopApi.request.RegisterRequest;
 import org.service.passwordman.desktopApi.response.AuthResponse;
 import org.service.passwordman.desktopApi.validation.AuthRequestValidator;
+import org.service.passwordman.infrastructure.security.CurrentUserProvider;
 
 
 public class AuthHandler {
@@ -22,6 +26,8 @@ public class AuthHandler {
     private final AuthDesktopMapper authDesktopMapper;
     private final AuthRequestValidator authRequestValidator;
     private final ApiHandler apiHandler;
+    private final TokenService tokenService;
+    private final CurrentUserProvider currentUserProvider;
 
     public AuthHandler(
             RegisterUserUseCase registerUserUseCase,
@@ -30,7 +36,9 @@ public class AuthHandler {
             ChangeLoginPasswordUseCase changeLoginPasswordUseCase,
             AuthDesktopMapper authDesktopMapper,
             AuthRequestValidator authRequestValidator,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            TokenService tokenService,
+            CurrentUserProvider currentUserProvider
     ) {
         this.registerUserUseCase = registerUserUseCase;
         this.loginUserUseCase = loginUserUseCase;
@@ -39,6 +47,8 @@ public class AuthHandler {
         this.authDesktopMapper = authDesktopMapper;
         this.authRequestValidator = authRequestValidator;
         this.apiHandler = apiHandler;
+        this.tokenService = tokenService;
+        this.currentUserProvider = currentUserProvider;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -60,16 +70,21 @@ public class AuthHandler {
         return apiHandler.execute(() -> register(request));
     }
 
-    public AuthResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         authRequestValidator.validateLogin(request);
 
-        loginUserUseCase.execute(
+        TokenPayload tokenPayload = loginUserUseCase.execute(
                 request.getUsername(),
                 request.getLoginPassword(),
                 request.getIpAddress()
         );
 
-        return authDesktopMapper.success("User successfully logged in.");
+        String accessToken = tokenService.generateAccessToken(tokenPayload);
+
+        return new LoginResponse(
+                "User successfully logged in.",
+                accessToken
+        );
     }
 
     public Object loginSafe(LoginRequest request) {
@@ -79,8 +94,12 @@ public class AuthHandler {
     public AuthResponse changeMasterPassword(ChangeMasterPasswordRequest request) {
         authRequestValidator.validateChangeMasterPassword(request);
 
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
+
         changeMasterPasswordUseCase.execute(
-                request.getUserId(),
+                currentUserId,
+                jwtTokenId,
                 request.getOldMasterPassword(),
                 request.getNewMasterPassword(),
                 request.getIpAddress()
@@ -93,16 +112,22 @@ public class AuthHandler {
         return apiHandler.execute(() -> changeMasterPassword(request));
     }
 
-    public AuthResponse changeLoginPasswordSafe(ChangeLoginPasswordRequest request) {
+    public AuthResponse changeLoginPassword(ChangeLoginPasswordRequest request) {
         authRequestValidator.validateChangeLoginPassword(request);
 
+        int currentUserId = currentUserProvider.requireUserId();
+
         changeLoginPasswordUseCase.execute(
-                request.getUserId(),
+                currentUserId,
                 request.getOldLoginPassword(),
                 request.getNewLoginPassword(),
                 request.getIpAddress()
         );
 
         return authDesktopMapper.success("Login password successfully changed.");
+    }
+
+    public Object changeLoginPasswordSafe(ChangeLoginPasswordRequest request) {
+        return apiHandler.execute(() -> changeLoginPassword(request));
     }
 }

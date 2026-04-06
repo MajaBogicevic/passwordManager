@@ -20,6 +20,26 @@ public class InMemoryPasswordEntryRepository implements PasswordEntryRepository 
     }
 
     @Override
+    public Optional<PasswordEntry> findByIdAndUserId(int entryId, int userId) {
+        PasswordEntry entry = entriesById.get(entryId);
+
+        if (entry == null || entry.getUserId() != userId) {
+            return Optional.empty();
+        }
+
+        return Optional.of(entry);
+    }
+
+    @Override
+    public List<PasswordEntry> findByFolderIdAndUserId(int folderId, int userId) {
+        return entriesById.values()
+                .stream()
+                .filter(entry -> entry.getFolderId() == folderId)
+                .filter(entry -> entry.getUserId() == userId)
+                .toList();
+    }
+
+    @Override
     public List<PasswordEntry> findByUserId(int userId) {
         return entriesById.values()
                 .stream()

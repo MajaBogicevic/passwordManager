@@ -7,6 +7,8 @@ import org.service.passwordman.application.usecase.auth.ChangeLoginPasswordUseCa
 import org.service.passwordman.domain.exception.ValidationException;
 import org.service.passwordman.domain.model.User;
 import org.service.passwordman.domain.repository.UserRepository;
+import org.service.passwordman.domain.exception.UserNotFoundException;
+import org.service.passwordman.domain.exception.InvalidCredentialsException;
 
 public class ChangeLoginPasswordService implements ChangeLoginPasswordUseCase {
 
@@ -46,28 +48,28 @@ public class ChangeLoginPasswordService implements ChangeLoginPasswordUseCase {
         }
 
         User user = userRepository.findById(userId)
-                .orElse(null);
+                .orElseThrow(UserNotFoundException::new);
 
-        if (user == null) {
+        if (!passwordHasher.matches(oldLoginPassword, user.getLoginPasswordHash())) {
             auditLogger.log(userId, "CHANGE_LOGIN_PASSWORD_FAILED", ipAddress);
-            throw new ValidationException("User not found.");
+            throw new InvalidCredentialsException();
         }
 
         String newHash = passwordHasher.hash(newLoginPassword);
 
         User updatedUser = new User(
-                user.getId(),
-                user.getEmail(),
-                user.getUsername(),
-                user.getLoginPasswordHash(),
-                newHash,
-                user.getNotes(),
-                user.getCreatedAt(),
-                clock.now()
+            user.getId(),
+            user.getEmail(),
+            user.getUsername(),
+            newHash, 
+            user.getMasterPasswordHash(), 
+            user.getNotes(),
+            user.getCreatedAt(),
+            clock.now()
         );
 
         userRepository.save(updatedUser);
 
-        auditLogger.log(userId, "CHANGE_LOGIN_PASSWORD_SUCCESS", "localhost");
+        auditLogger.log(userId, "CHANGE_LOGIN_PASSWORD_SUCCESS", ipAddress);
     }
 }

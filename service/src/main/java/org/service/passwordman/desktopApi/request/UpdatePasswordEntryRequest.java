@@ -1,7 +1,6 @@
 package org.service.passwordman.desktopApi.request;
 
 public class UpdatePasswordEntryRequest {
-    private int userId;
     private int entryId;
     private String title;
     private String url;
@@ -14,7 +13,6 @@ public class UpdatePasswordEntryRequest {
     }
 
     public UpdatePasswordEntryRequest(
-            int userId,
             int entryId,
             String title,
             String url,
@@ -23,7 +21,6 @@ public class UpdatePasswordEntryRequest {
             String notes,
             int folderId
     ) {
-        this.userId = userId;
         this.entryId = entryId;
         this.title = title;
         this.url = url;
@@ -31,10 +28,6 @@ public class UpdatePasswordEntryRequest {
         this.plainPassword = plainPassword;
         this.notes = notes;
         this.folderId = folderId;
-    }
-
-    public int getUserId() {
-        return userId;
     }
 
     public int getEntryId() {

@@ -14,8 +14,9 @@ public class GetFolderService implements GetFolderUseCase {
     }
 
     @Override
-    public Folder execute(int folderId) {
-        return folderRepository.findById(folderId)
-                .orElseThrow(() -> new FolderNotFoundException("Folder with id " + folderId + " was not found."));
+    public Folder execute(int userId, int folderId) {
+        return folderRepository.findByIdAndUserId(folderId, userId)
+                .orElseThrow(() ->
+                        new FolderNotFoundException("Folder with id " + folderId + " was not found."));
     }
 }

@@ -10,9 +10,6 @@ public class FolderRequestValidator {
         if (request == null) {
             throw new ValidationException("Create folder request must not be null.");
         }
-        if (request.getUserId() <= 0) {
-            throw new ValidationException("User id must be greater than 0.");
-        }
         if (isBlank(request.getFolderName())) {
             throw new ValidationException("Folder name is required.");
         }
@@ -21,9 +18,6 @@ public class FolderRequestValidator {
     public void validateRename(RenameFolderRequest request) {
         if (request == null) {
             throw new ValidationException("Rename folder request must not be null.");
-        }
-        if (request.getUserId() <= 0) {
-            throw new ValidationException("User id must be greater than 0.");
         }
         if (request.getFolderId() <= 0) {
             throw new ValidationException("Folder id must be greater than 0.");

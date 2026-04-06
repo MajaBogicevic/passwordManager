@@ -29,7 +29,7 @@ public class RenameFolderService implements RenameFolderUseCase {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
-        Folder folder = folderRepository.findById(folderId)
+        Folder folder = folderRepository.findByIdAndUserId(folderId, userId)
                 .orElseThrow(() -> new FolderNotFoundException(String.valueOf(folderId)));
 
         if (folder.getUserId() != userId) {

@@ -4,19 +4,25 @@ import org.service.passwordman.application.usecase.entry.SearchPasswordEntriesUs
 import org.service.passwordman.domain.exception.ValidationException;
 import org.service.passwordman.domain.model.PasswordEntry;
 import org.service.passwordman.domain.repository.PasswordEntryRepository;
+import org.service.passwordman.application.usecase.vault.AutoLockUseCase;
 
 import java.util.List;
 
 public class SearchPasswordEntriesService implements SearchPasswordEntriesUseCase {
 
     private final PasswordEntryRepository passwordEntryRepository;
+    private final AutoLockUseCase autoLockUseCase;
 
-    public SearchPasswordEntriesService(PasswordEntryRepository passwordEntryRepository) {
+    public SearchPasswordEntriesService(
+            PasswordEntryRepository passwordEntryRepository,
+            AutoLockUseCase autoLockUseCase
+    ) {
         this.passwordEntryRepository = passwordEntryRepository;
+        this.autoLockUseCase = autoLockUseCase;
     }
 
     @Override
-    public List<PasswordEntry> execute(int userId, String titleQuery) {
+    public List<PasswordEntry> execute(int userId, String titleQuery, String jwtTokenId) {
         if (userId <= 0) {
             throw new ValidationException("User id must be greater than 0.");
         }
@@ -24,6 +30,9 @@ public class SearchPasswordEntriesService implements SearchPasswordEntriesUseCas
         if (titleQuery == null) {
             throw new ValidationException("Search query must not be null.");
         }
+
+        autoLockUseCase.ensureVaultIsActive(userId, jwtTokenId, null);
+        autoLockUseCase.refreshActivity(userId, jwtTokenId);
 
         return passwordEntryRepository.searchByUserIdAndTitle(userId, titleQuery);
     }

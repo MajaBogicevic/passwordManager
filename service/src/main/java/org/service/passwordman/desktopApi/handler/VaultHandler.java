@@ -7,6 +7,7 @@ import org.service.passwordman.desktopApi.mapper.AuthDesktopMapper;
 import org.service.passwordman.desktopApi.request.UnlockVaultRequest;
 import org.service.passwordman.desktopApi.response.AuthResponse;
 import org.service.passwordman.desktopApi.validation.AuthRequestValidator;
+import org.service.passwordman.infrastructure.security.CurrentUserProvider;
 
 public class VaultHandler {
 
@@ -16,6 +17,7 @@ public class VaultHandler {
     private final AuthDesktopMapper authDesktopMapper;
     private final AuthRequestValidator authRequestValidator;
     private final ApiHandler apiHandler;
+    private final CurrentUserProvider currentUserProvider;
 
     public VaultHandler(
             UnlockVaultUseCase unlockVaultUseCase,
@@ -23,7 +25,8 @@ public class VaultHandler {
             AutoLockUseCase autoLockUseCase,
             AuthDesktopMapper authDesktopMapper,
             AuthRequestValidator authRequestValidator,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            CurrentUserProvider currentUserProvider
     ) {
         this.unlockVaultUseCase = unlockVaultUseCase;
         this.lockVaultUseCase = lockVaultUseCase;
@@ -31,14 +34,20 @@ public class VaultHandler {
         this.authDesktopMapper = authDesktopMapper;
         this.authRequestValidator = authRequestValidator;
         this.apiHandler = apiHandler;
+        this.currentUserProvider = currentUserProvider;
     }
 
     public AuthResponse unlock(UnlockVaultRequest request) {
         authRequestValidator.validateUnlock(request);
 
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
+
         unlockVaultUseCase.execute(
-                request.getUserId(),
-                request.getMasterPassword()
+                currentUserId,
+                jwtTokenId,
+                request.getMasterPassword(),
+                null
         );
 
         return authDesktopMapper.success("Vault successfully unlocked.");
@@ -48,21 +57,27 @@ public class VaultHandler {
         return apiHandler.execute(() -> unlock(request));
     }
 
-    public AuthResponse lock(int userId) {
-        lockVaultUseCase.execute(userId);
+    public AuthResponse lock() {
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
+
+        lockVaultUseCase.execute(currentUserId, jwtTokenId, null);
         return authDesktopMapper.success("Vault successfully locked.");
     }
 
-    public Object lockSafe(int userId) {
-        return apiHandler.execute(() -> lock(userId));
+    public Object lockSafe() {
+        return apiHandler.execute(this::lock);
     }
 
-    public AuthResponse autoLock(int userId) {
-        autoLockUseCase.execute(userId);
+    public AuthResponse autoLock() {
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
+
+        autoLockUseCase.execute(currentUserId, jwtTokenId, null);
         return authDesktopMapper.success("Vault auto-lock executed.");
     }
 
-    public Object autoLockSafe(int userId) {
-        return apiHandler.execute(() -> autoLock(userId));
+    public Object autoLockSafe() {
+        return apiHandler.execute(this::autoLock);
     }
 }

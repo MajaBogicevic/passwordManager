@@ -19,12 +19,16 @@ public class LockVaultService implements LockVaultUseCase {
     }
 
     @Override
-    public void execute(int userId) {
+    public void execute(int userId, String jwtTokenId, String ipAddress) {
         if (userId <= 0) {
             throw new ValidationException("User id must be greater than 0.");
         }
 
-        vaultSessionStore.lock(userId);
-        auditLogger.log(userId, "VAULT_LOCKED", "localhost");
+        if (jwtTokenId == null || jwtTokenId.isBlank()) {
+            throw new ValidationException("JWT token id is required.");
+        }
+
+        vaultSessionStore.lock(userId, jwtTokenId);
+        auditLogger.log(userId, "VAULT_LOCKED", ipAddress);
     }
 }

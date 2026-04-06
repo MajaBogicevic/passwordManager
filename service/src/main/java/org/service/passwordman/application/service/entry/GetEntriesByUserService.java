@@ -27,11 +27,11 @@ public class GetEntriesByUserService implements GetEntriesByUserUseCase {
     }
 
     @Override
-    public List<PasswordEntry> execute(int userId) {
+    public List<PasswordEntry> execute(int userId, String jwtTokenId) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
-        if (!vaultSessionStore.isUnlocked(userId)) {
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             throw new VaultSessionExpiredException();
         }
 

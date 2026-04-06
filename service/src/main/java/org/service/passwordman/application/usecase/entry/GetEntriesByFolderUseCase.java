@@ -5,5 +5,5 @@ import org.service.passwordman.domain.model.PasswordEntry;
 import java.util.List;
 
 public interface GetEntriesByFolderUseCase {
-    List<PasswordEntry> execute(int userId, int folderId);
+    List<PasswordEntry> execute(int userId, int folderId, String jwtTokenId);
 }

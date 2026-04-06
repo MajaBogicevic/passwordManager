@@ -15,11 +15,11 @@ public class VaultController {
         return vaultHandler.unlockSafe(request);
     }
 
-    public Object lock(int userId) {
-        return vaultHandler.lockSafe(userId);
+    public Object lock() {
+        return vaultHandler.lockSafe();
     }
 
-    public Object autoLock(int userId) {
-        return vaultHandler.autoLockSafe(userId);
+    public Object autoLock() {
+        return vaultHandler.autoLockSafe();
     }
 }

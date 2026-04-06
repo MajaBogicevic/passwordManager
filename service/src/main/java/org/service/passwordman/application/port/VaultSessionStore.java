@@ -4,9 +4,9 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface VaultSessionStore {
-    void unlock(int userId, LocalDateTime unlockedAt);
-    void lock(int userId);
-    boolean isUnlocked(int userId);
-    void refreshActivity(int userId, LocalDateTime activityAt);
-    Optional<LocalDateTime> getLastActivityAt(int userId);
+    void unlock(int userId, String jwtTokenId, LocalDateTime unlockedAt);
+    void lock(int userId, String jwtTokenId);
+    boolean isUnlocked(int userId, String jwtTokenId);
+    void refreshActivity(int userId, String jwtTokenId, LocalDateTime activityAt);
+    Optional<LocalDateTime> getLastActivityAt(int userId, String jwtTokenId);
 }

@@ -87,6 +87,7 @@ import org.service.passwordman.infrastructure.persistence.repository.InMemoryPas
 import org.service.passwordman.infrastructure.persistence.repository.InMemoryUserRepository;
 import org.service.passwordman.infrastructure.security.BCryptPasswordHasher;
 import org.service.passwordman.infrastructure.security.JwtTokenService;
+import org.service.passwordman.infrastructure.security.CurrentUserProvider;
 import org.service.passwordman.infrastructure.session.InMemoryVaultSessionStore;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -145,6 +146,11 @@ public class BeanConfig {
     @Bean
     public AuditLogger auditLogger(AuditLogRepository auditLogRepository, Clock clock) {
         return new AuditLoggerAdapter(auditLogRepository, clock);
+    }
+
+    @Bean
+    public CurrentUserProvider currentUserProvider() {
+        return new CurrentUserProvider();
     }
 
     @Bean
@@ -247,7 +253,8 @@ public class BeanConfig {
             VaultSessionStore vaultSessionStore,
             EncryptionService encryptionService,
             Clock clock,
-            AuditLogger auditLogger
+            AuditLogger auditLogger,
+            FolderRepository folderRepository
     ) {
         return new CreatePasswordEntryService(
                 passwordEntryRepository,
@@ -255,7 +262,8 @@ public class BeanConfig {
                 vaultSessionStore,
                 encryptionService,
                 clock,
-                auditLogger
+                auditLogger,
+                folderRepository
         );
     }
 
@@ -281,11 +289,13 @@ public class BeanConfig {
     }
 
     @Bean
-        public SearchPasswordEntriesUseCase searchPasswordEntriesUseCase(
-                PasswordEntryRepository passwordEntryRepository
-        ) {
-            return new SearchPasswordEntriesService(passwordEntryRepository);
-        }
+    public SearchPasswordEntriesUseCase searchPasswordEntriesUseCase(
+            PasswordEntryRepository passwordEntryRepository,
+            AutoLockUseCase autoLockUseCase
+    ) {
+        return new SearchPasswordEntriesService(passwordEntryRepository, autoLockUseCase);
+    }
+    
 
     @Bean
     public GetEntriesByFolderUseCase getEntriesByFolderUseCase(
@@ -339,7 +349,8 @@ public class BeanConfig {
             VaultSessionStore vaultSessionStore,
             EncryptionService encryptionService,
             Clock clock,
-            AuditLogger auditLogger
+            AuditLogger auditLogger,
+            FolderRepository folderRepository
     ) {
         return new UpdatePasswordEntryService(
                 passwordEntryRepository,
@@ -347,7 +358,8 @@ public class BeanConfig {
                 vaultSessionStore,
                 encryptionService,
                 clock,
-                auditLogger
+                auditLogger,
+                folderRepository
         );
     }
 
@@ -459,7 +471,9 @@ public class BeanConfig {
             ChangeLoginPasswordUseCase changeLoginPasswordUseCase,
             AuthDesktopMapper authDesktopMapper,
             AuthRequestValidator authRequestValidator,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            TokenService tokenService,
+            CurrentUserProvider currentUserProvider
     ) {
         return new AuthHandler(
                 registerUserUseCase,
@@ -468,7 +482,9 @@ public class BeanConfig {
                 changeLoginPasswordUseCase,
                 authDesktopMapper,
                 authRequestValidator,
-                apiHandler
+                apiHandler,
+                tokenService,
+                currentUserProvider
         );
     }
 
@@ -479,7 +495,8 @@ public class BeanConfig {
             AutoLockUseCase autoLockUseCase,
             AuthDesktopMapper authDesktopMapper,
             AuthRequestValidator authRequestValidator,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            CurrentUserProvider currentUserProvider
     ) {
         return new VaultHandler(
                 unlockVaultUseCase,
@@ -487,7 +504,8 @@ public class BeanConfig {
                 autoLockUseCase,
                 authDesktopMapper,
                 authRequestValidator,
-                apiHandler
+                apiHandler,
+                currentUserProvider
         );
     }
 
@@ -500,7 +518,8 @@ public class BeanConfig {
             DeleteFolderUseCase deleteFolderUseCase,
             FolderDesktopMapper folderDesktopMapper,
             FolderRequestValidator folderRequestValidator,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            CurrentUserProvider currentUserProvider
     ) {
         return new FolderHandler(
                 createFolderUseCase,
@@ -510,7 +529,8 @@ public class BeanConfig {
                 deleteFolderUseCase,
                 folderDesktopMapper,
                 folderRequestValidator,
-                apiHandler
+                apiHandler,
+                currentUserProvider
         );
     }
 
@@ -527,7 +547,8 @@ public class BeanConfig {
             PasswordEntryDesktopMapper passwordEntryDesktopMapper,
             PasswordEntryRequestValidator passwordEntryRequestValidator,
             SearchPasswordEntriesUseCase searchPasswordEntriesUseCase,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            CurrentUserProvider currentUserProvider
     ) {
         return new PasswordEntryHandler(
                 createPasswordEntryUseCase,
@@ -541,16 +562,18 @@ public class BeanConfig {
                 passwordEntryDesktopMapper,
                 passwordEntryRequestValidator,
                 searchPasswordEntriesUseCase,
-                apiHandler
+                apiHandler,
+                currentUserProvider
         );
     }
 
     @Bean
     public AuditHandler auditHandler(
             GetSecurityActivityUseCase getSecurityActivityUseCase,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            CurrentUserProvider currentUserProvider
     ) {
-        return new AuditHandler(getSecurityActivityUseCase, apiHandler);
+        return new AuditHandler(getSecurityActivityUseCase, apiHandler, currentUserProvider);
     }
 
     @Bean

@@ -9,6 +9,8 @@ import org.service.passwordman.domain.exception.ValidationException;
 import org.service.passwordman.domain.exception.VaultSessionExpiredException;
 import org.service.passwordman.domain.model.User;
 import org.service.passwordman.domain.repository.UserRepository;
+import org.service.passwordman.domain.exception.UserNotFoundException;
+import org.service.passwordman.domain.exception.InvalidCredentialsException;
 
 public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase {
 
@@ -33,7 +35,7 @@ public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase 
     }
 
     @Override
-    public void execute(int userId, String oldMasterPassword, String newMasterPassword, String ipAddress) {
+    public void execute(int userId, String jwtTokenId, String oldMasterPassword, String newMasterPassword, String ipAddress) {
         if (userId <= 0) {
             throw new ValidationException("User id must be greater than 0.");
         }
@@ -46,16 +48,20 @@ public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase 
             throw new ValidationException("New master password is required.");
         }
 
-        if (!vaultSessionStore.isUnlocked(userId)) {
+        if (oldMasterPassword.equals(newMasterPassword)) {
+            throw new ValidationException("New master password must be different from the old master password.");
+        }
+
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             throw new VaultSessionExpiredException();
         }
 
         User user = userRepository.findById(userId)
-                .orElse(null);
+                .orElseThrow(UserNotFoundException::new);
 
-        if (user == null) {
+        if (!passwordHasher.matches(oldMasterPassword, user.getMasterPasswordHash())) {
             auditLogger.log(userId, "CHANGE_MASTER_PASSWORD_FAILED", ipAddress);
-            throw new ValidationException("User not found.");
+            throw new InvalidCredentialsException();
         }
 
         String newHash = passwordHasher.hash(newMasterPassword);
@@ -73,6 +79,6 @@ public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase 
 
         userRepository.save(updatedUser);
 
-        auditLogger.log(userId, "CHANGE_MASTER_PASSWORD_SUCCESS", "localhost");
+        auditLogger.log(userId, "CHANGE_MASTER_PASSWORD_SUCCESS", ipAddress);
     }
 }

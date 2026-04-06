@@ -7,6 +7,7 @@ import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
 import org.service.passwordman.application.port.VaultSessionStore;
 import org.service.passwordman.application.usecase.vault.AutoLockUseCase;
+import org.service.passwordman.domain.exception.ValidationException;
 import org.service.passwordman.domain.exception.VaultLockedException;
 import org.service.passwordman.domain.exception.VaultSessionExpiredException;
 
@@ -30,53 +31,67 @@ public class AutoLockService implements AutoLockUseCase {
     }
 
     @Override
-    public void execute(int userId) {
-        lockIfExpired(userId);
+    public void execute(int userId, String jwtTokenId, String ipAddress) {
+        lockIfExpired(userId, jwtTokenId, ipAddress);
     }
 
     @Override
-    public void ensureVaultIsActive(int userId) {
-        if (!vaultSessionStore.isUnlocked(userId)) {
+    public void ensureVaultIsActive(int userId, String jwtTokenId, String ipAddress) {
+        validate(userId, jwtTokenId);
+
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             throw new VaultLockedException();
         }
 
-        LocalDateTime lastActivityAt = vaultSessionStore.getLastActivityAt(userId)
+        LocalDateTime lastActivityAt = vaultSessionStore.getLastActivityAt(userId, jwtTokenId)
                 .orElseThrow(VaultLockedException::new);
 
-        LocalDateTime now = clock.now();
-        Duration inactiveFor = Duration.between(lastActivityAt, now);
+        Duration inactiveFor = Duration.between(lastActivityAt, clock.now());
 
         if (inactiveFor.compareTo(timeout) >= 0) {
-            vaultSessionStore.lock(userId);
-            auditLogger.log(userId, "VAULT_AUTO_LOCKED", "localhost");
+            vaultSessionStore.lock(userId, jwtTokenId);
+            auditLogger.log(userId, "VAULT_AUTO_LOCKED", ipAddress);
             throw new VaultSessionExpiredException();
         }
     }
 
     @Override
-    public void refreshActivity(int userId) {
-        vaultSessionStore.refreshActivity(userId, clock.now());
+    public void refreshActivity(int userId, String jwtTokenId) {
+        validate(userId, jwtTokenId);
+        vaultSessionStore.refreshActivity(userId, jwtTokenId, clock.now());
     }
 
-    private void lockIfExpired(int userId) {
-        if (!vaultSessionStore.isUnlocked(userId)) {
+    private void lockIfExpired(int userId, String jwtTokenId, String ipAddress) {
+        validate(userId, jwtTokenId);
+
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             return;
         }
 
-        LocalDateTime lastActivityAt = vaultSessionStore.getLastActivityAt(userId)
+        LocalDateTime lastActivityAt = vaultSessionStore.getLastActivityAt(userId, jwtTokenId)
                 .orElse(null);
 
         if (lastActivityAt == null) {
-            vaultSessionStore.lock(userId);
+            vaultSessionStore.lock(userId, jwtTokenId);
+            auditLogger.log(userId, "VAULT_AUTO_LOCKED", ipAddress);
             return;
         }
 
-        LocalDateTime now = clock.now();
-        Duration inactiveFor = Duration.between(lastActivityAt, now);
+        Duration inactiveFor = Duration.between(lastActivityAt, clock.now());
 
         if (inactiveFor.compareTo(timeout) >= 0) {
-            vaultSessionStore.lock(userId);
-            auditLogger.log(userId, "VAULT_AUTO_LOCKED", "localhost");
+            vaultSessionStore.lock(userId, jwtTokenId);
+            auditLogger.log(userId, "VAULT_AUTO_LOCKED", ipAddress);
+        }
+    }
+
+    private void validate(int userId, String jwtTokenId) {
+        if (userId <= 0) {
+            throw new ValidationException("User id must be greater than 0.");
+        }
+
+        if (jwtTokenId == null || jwtTokenId.isBlank()) {
+            throw new ValidationException("JWT token id is required.");
         }
     }
 }

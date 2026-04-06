@@ -12,6 +12,7 @@ import org.service.passwordman.domain.exception.VaultSessionExpiredException;
 import org.service.passwordman.domain.model.PasswordEntry;
 import org.service.passwordman.domain.repository.PasswordEntryRepository;
 import org.service.passwordman.domain.repository.UserRepository;
+import org.service.passwordman.domain.repository.FolderRepository;
 
 public class CreatePasswordEntryService implements CreatePasswordEntryUseCase {
 
@@ -21,6 +22,7 @@ public class CreatePasswordEntryService implements CreatePasswordEntryUseCase {
     private final EncryptionService encryptionService;
     private final Clock clock;
     private final AuditLogger auditLogger;
+    private final FolderRepository folderRepository;
 
     public CreatePasswordEntryService(
             PasswordEntryRepository passwordEntryRepository,
@@ -28,7 +30,8 @@ public class CreatePasswordEntryService implements CreatePasswordEntryUseCase {
             VaultSessionStore vaultSessionStore,
             EncryptionService encryptionService,
             Clock clock,
-            AuditLogger auditLogger
+            AuditLogger auditLogger,
+            FolderRepository folderRepository
     ) {
         this.passwordEntryRepository = passwordEntryRepository;
         this.userRepository = userRepository;
@@ -36,6 +39,7 @@ public class CreatePasswordEntryService implements CreatePasswordEntryUseCase {
         this.encryptionService = encryptionService;
         this.clock = clock;
         this.auditLogger = auditLogger;
+        this.folderRepository = folderRepository;
 
     }
 
@@ -48,13 +52,19 @@ public class CreatePasswordEntryService implements CreatePasswordEntryUseCase {
             String plaintextPassword,
             String notes,
             int folderId,
-            String ip
+            String ip,
+            String jwtTokenId
     ) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
-        if (!vaultSessionStore.isUnlocked(userId)) {
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             throw new VaultSessionExpiredException();
+        }
+
+        if (folderId > 0) {
+            folderRepository.findByIdAndUserId(folderId, userId)
+                    .orElseThrow(() -> new UnauthorizedVaultAccessException());
         }
 
         String encryptedPassword = encryptionService.encrypt(plaintextPassword);

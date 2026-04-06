@@ -29,7 +29,7 @@ public class RevealPasswordService implements RevealPasswordUseCase {
     }
 
     @Override
-    public String execute(int userId, int entryId, String ipAddress) {
+    public String execute(int userId, int entryId, String ipAddress, String jwtTokenId) {
         if (userId <= 0) {
             throw new ValidationException("User id must be greater than 0.");
         }
@@ -38,19 +38,15 @@ public class RevealPasswordService implements RevealPasswordUseCase {
             throw new ValidationException("Entry id must be greater than 0.");
         }
 
-        autoLockUseCase.ensureVaultIsActive(userId);
+        autoLockUseCase.ensureVaultIsActive(userId, jwtTokenId, ipAddress);
 
-        PasswordEntry entry = passwordEntryRepository.findById(entryId)
+        PasswordEntry entry = passwordEntryRepository.findByIdAndUserId(entryId, userId)
                 .orElseThrow(() -> new EntryNotFoundException(String.valueOf(entryId)));
-
-        if (entry.getUserId() != userId) {
-            throw new EntryNotFoundException(String.valueOf(entryId));
-        }
 
         String plainPassword = encryptionService.decrypt(entry.getEncryptedPassword());
 
-        autoLockUseCase.refreshActivity(userId);
-        auditLogger.log(userId, "PASSWORD_REVEALED", ipAddress);
+        autoLockUseCase.refreshActivity(userId, jwtTokenId);
+        auditLogger.log(userId, "PASSWORD_REVEAL_SUCCESS", ipAddress);
 
         return plainPassword;
     }

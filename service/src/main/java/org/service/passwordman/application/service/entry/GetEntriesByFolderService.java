@@ -33,24 +33,17 @@ public class GetEntriesByFolderService implements GetEntriesByFolderUseCase {
     }
 
     @Override
-    public List<PasswordEntry> execute(int userId, int folderId) {
+    public List<PasswordEntry> execute(int userId, int folderId, String jwtTokenId) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
-        if (!vaultSessionStore.isUnlocked(userId)) {
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             throw new VaultSessionExpiredException();
         }
 
-        Folder folder = folderRepository.findById(folderId)
+        folderRepository.findByIdAndUserId(folderId, userId)
                 .orElseThrow(() -> new FolderNotFoundException(String.valueOf(folderId)));
 
-        if (folder.getUserId() != userId) {
-            throw new UnauthorizedVaultAccessException();
-        }
-
-        return passwordEntryRepository.findByFolderId(folderId)
-                .stream()
-                .filter(entry -> entry.getUserId() == userId)
-                .toList();
+        return passwordEntryRepository.findByFolderIdAndUserId(folderId, userId);
     }
 }

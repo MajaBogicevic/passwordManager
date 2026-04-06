@@ -1,12 +1,12 @@
-package org.service.passwordman.application.security;
+package org.service.passwordman.infrastructure.security;
 
-public class TokenPayload {
+public class AuthenticatedUser {
 
     private final int userId;
     private final String username;
     private final String jwtTokenId;
 
-    public TokenPayload(int userId, String username, String jwtTokenId) {
+    public AuthenticatedUser(int userId, String username, String jwtTokenId) {
         this.userId = userId;
         this.username = username;
         this.jwtTokenId = jwtTokenId;

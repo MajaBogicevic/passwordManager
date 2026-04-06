@@ -3,7 +3,6 @@ package org.service.passwordman.application.service.entry;
 import org.service.passwordman.application.port.VaultSessionStore;
 import org.service.passwordman.application.usecase.entry.GetPasswordEntryUseCase;
 import org.service.passwordman.domain.exception.EntryNotFoundException;
-import org.service.passwordman.domain.exception.UnauthorizedVaultAccessException;
 import org.service.passwordman.domain.exception.VaultSessionExpiredException;
 import org.service.passwordman.domain.model.PasswordEntry;
 import org.service.passwordman.domain.repository.PasswordEntryRepository;
@@ -22,22 +21,12 @@ public class GetPasswordEntryService implements GetPasswordEntryUseCase {
     }
 
     @Override
-    public PasswordEntry execute(int userId, int entryId) {
-        if (!vaultSessionStore.isUnlocked(userId)) {
+    public PasswordEntry execute(int userId, int entryId, String jwtTokenId) {
+        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
             throw new VaultSessionExpiredException();
         }
 
-        if (!vaultSessionStore.isUnlocked(userId)) {
-            throw new VaultSessionExpiredException();
-        }
-
-        PasswordEntry entry = passwordEntryRepository.findById(entryId)
+        return passwordEntryRepository.findByIdAndUserId(entryId, userId)
                 .orElseThrow(() -> new EntryNotFoundException(String.valueOf(entryId)));
-
-        if (entry.getUserId() != userId) {
-            throw new UnauthorizedVaultAccessException();
-        }
-
-        return entry;
     }
 }

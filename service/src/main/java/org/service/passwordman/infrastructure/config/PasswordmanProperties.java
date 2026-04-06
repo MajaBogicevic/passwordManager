@@ -7,9 +7,23 @@ public class PasswordmanProperties {
 
     private String encryptionKeyRef;
     private String encryptionMasterKeyBase64;
-
     private String jwtSecret;
     private long jwtExpirationMillis;
+    private String allowedOrigins;
+
+    public void validate() {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("passwordman.jwt-secret must be configured.");
+        }
+
+        if (jwtSecret.length() < 32) {
+            throw new IllegalStateException("passwordman.jwt-secret must be at least 32 characters long.");
+        }
+
+        if (jwtExpirationMillis <= 0) {
+            throw new IllegalStateException("passwordman.jwt-expiration-millis must be greater than 0.");
+        }
+    }
 
     public String getEncryptionKeyRef() {
         return encryptionKeyRef;

@@ -20,6 +20,7 @@ import org.service.passwordman.desktopApi.response.PasswordEntrySearchResponse;
 import org.service.passwordman.desktopApi.response.RevealPasswordResponse;
 import org.service.passwordman.desktopApi.validation.PasswordEntryRequestValidator;
 import org.service.passwordman.domain.model.PasswordEntry;
+import org.service.passwordman.infrastructure.security.CurrentUserProvider;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +39,7 @@ public class PasswordEntryHandler {
     private final PasswordEntryDesktopMapper passwordEntryDesktopMapper;
     private final PasswordEntryRequestValidator passwordEntryRequestValidator;
     private final ApiHandler apiHandler;
+    private final CurrentUserProvider currentUserProvider;
 
     public PasswordEntryHandler(
             CreatePasswordEntryUseCase createPasswordEntryUseCase,
@@ -51,7 +53,8 @@ public class PasswordEntryHandler {
             PasswordEntryDesktopMapper passwordEntryDesktopMapper,
             PasswordEntryRequestValidator passwordEntryRequestValidator,
             SearchPasswordEntriesUseCase searchPasswordEntriesUseCase,
-            ApiHandler apiHandler
+            ApiHandler apiHandler,
+            CurrentUserProvider currentUserProvider
     ) {
         this.createPasswordEntryUseCase = createPasswordEntryUseCase;
         this.getPasswordEntryUseCase = getPasswordEntryUseCase;
@@ -65,20 +68,25 @@ public class PasswordEntryHandler {
         this.passwordEntryRequestValidator = passwordEntryRequestValidator;
         this.searchPasswordEntriesUseCase = searchPasswordEntriesUseCase;
         this.apiHandler = apiHandler;
+        this.currentUserProvider = currentUserProvider;
     }
 
     public AuthResponse create(CreatePasswordEntryRequest request) {
         passwordEntryRequestValidator.validateCreate(request);
 
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
+
         createPasswordEntryUseCase.execute(
-                request.getUserId(),
+                currentUserId,
                 request.getTitle(),
                 request.getUrl(),
                 request.getUsername(),
                 request.getPlainPassword(),
                 request.getNotes(),
                 request.getFolderId(),
-                request.getIpAddress()
+                request.getIpAddress(),
+                jwtTokenId
         );
 
         return new AuthResponse(true, "Password entry successfully created.");
@@ -88,82 +96,95 @@ public class PasswordEntryHandler {
         return apiHandler.execute(() -> create(request));
     }
 
-    public PasswordEntryResponse get(int userId, int entryId) {
-        passwordEntryRequestValidator.validateGet(userId, entryId);
+    public PasswordEntryResponse get(int entryId) {
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
 
-        PasswordEntry entry = getPasswordEntryUseCase.execute(userId, entryId);
+        passwordEntryRequestValidator.validateGet(currentUserId, entryId);
+
+        PasswordEntry entry = getPasswordEntryUseCase.execute(currentUserId, entryId, jwtTokenId);
         return passwordEntryDesktopMapper.toResponse(entry);
     }
 
     public Object getSafe(int userId, int entryId) {
-        return apiHandler.execute(() -> get(userId, entryId));
+        return apiHandler.execute(() -> get(entryId));
     }
 
-    public List<PasswordEntryResponse> getByUser(int userId) {
-        if (userId <= 0) {
-            throw new org.service.passwordman.domain.exception.ValidationException(
-                    "User id must be greater than 0."
-            );
-        }
+    public List<PasswordEntryResponse> getByCurrentUser() {
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
 
-        return getEntriesByUserUseCase.execute(userId)
+        return getEntriesByUserUseCase.execute(currentUserId, jwtTokenId)
                 .stream()
                 .map(passwordEntryDesktopMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public Object getByUserSafe(int userId) {
-        return apiHandler.execute(() -> getByUser(userId));
+    public Object getByCurrentUserSafe() {
+        return apiHandler.execute(this::getByCurrentUser);
     }
 
-    public List<PasswordEntryResponse> getByFolder(int userId, int folderId) {
-        passwordEntryRequestValidator.validateGetByFolder(userId, folderId);
+    public List<PasswordEntryResponse> getByFolder(int folderId) {
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
 
-        return getEntriesByFolderUseCase.execute(userId, folderId)
+        passwordEntryRequestValidator.validateGetByFolder(currentUserId, folderId);
+
+        return getEntriesByFolderUseCase.execute(currentUserId, folderId, jwtTokenId)
                 .stream()
                 .map(passwordEntryDesktopMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    public Object getByFolderSafe(int userId, int folderId) {
-        return apiHandler.execute(() -> getByFolder(userId, folderId));
+    public Object getByFolderSafe(int folderId) {
+        return apiHandler.execute(() -> getByFolder(folderId));
     }
 
-    public RevealPasswordResponse revealPassword(int userId, int entryId, String ipAddress) {
-        passwordEntryRequestValidator.validateReveal(userId, entryId);
+    public RevealPasswordResponse revealPassword(int entryId, String ipAddress) {
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
 
-        String password = revealPasswordUseCase.execute(userId, entryId, ipAddress);
+        passwordEntryRequestValidator.validateReveal(currentUserId, entryId);
+
+        String password = revealPasswordUseCase.execute(currentUserId, entryId, ipAddress, jwtTokenId);
         return new RevealPasswordResponse(entryId, password);
     }
 
-    public Object revealPasswordSafe(int userId, int entryId, String ipAddress) {
-        return apiHandler.execute(() -> revealPassword(userId, entryId, ipAddress));
+    public Object revealPasswordSafe(int entryId, String ipAddress) {
+        return apiHandler.execute(() -> revealPassword(entryId, ipAddress));
     }
 
-    public CopyPasswordResponse copyPassword(int userId, int entryId, String ipAddress) {
-        passwordEntryRequestValidator.validateReveal(userId, entryId);
+    public CopyPasswordResponse copyPassword(int entryId, String ipAddress) {
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
 
-        String password = copyPasswordUseCase.execute(userId, entryId, ipAddress);
+        passwordEntryRequestValidator.validateReveal(currentUserId, entryId);
+
+        String password = copyPasswordUseCase.execute(currentUserId, entryId, ipAddress, jwtTokenId);
         return new CopyPasswordResponse(entryId, password, true, "Password successfully prepared for copy.");
     }
 
-    public Object copyPasswordSafe(int userId, int entryId, String ipAddress) {
-        return apiHandler.execute(() -> copyPassword(userId, entryId, ipAddress));
+    public Object copyPasswordSafe(int entryId, String ipAddress) {
+        return apiHandler.execute(() -> copyPassword(entryId, ipAddress));
     }
 
     public AuthResponse update(UpdatePasswordEntryRequest request) {
         passwordEntryRequestValidator.validateUpdate(request);
 
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
+
         updatePasswordEntryUseCase.execute(
-                request.getUserId(),
-                request.getEntryId(),
-                request.getTitle(),
-                request.getUrl(),
-                request.getUsername(),
-                request.getPlainPassword(),
-                request.getNotes(),
-                request.getFolderId()
-        );
+            currentUserId,
+            request.getEntryId(),
+            request.getTitle(),
+            request.getUrl(),
+            request.getUsername(),
+            request.getPlainPassword(),
+            request.getNotes(),
+            request.getFolderId(),
+            jwtTokenId
+    );
 
         return new AuthResponse(true, "Password entry successfully updated.");
     }
@@ -172,24 +193,28 @@ public class PasswordEntryHandler {
         return apiHandler.execute(() -> update(request));
     }
 
-    public AuthResponse delete(int userId, int entryId, String ipAddress) {
-        passwordEntryRequestValidator.validateDelete(userId, entryId);
-        deletePasswordEntryUseCase.execute(userId, entryId, ipAddress);
+    public AuthResponse delete(int entryId, String ipAddress) {
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
+
+        passwordEntryRequestValidator.validateDelete(currentUserId, entryId);
+        deletePasswordEntryUseCase.execute(currentUserId, entryId, ipAddress, jwtTokenId);
+        
         return new AuthResponse(true, "Password entry successfully deleted.");
     }
 
-    public Object deleteSafe(int userId, int entryId, String ipAddress) {
-        return apiHandler.execute(() -> delete(userId, entryId, ipAddress));
+    public Object deleteSafe(int entryId, String ipAddress) {
+        return apiHandler.execute(() -> delete(entryId, ipAddress));
     }
 
     public PasswordEntrySearchResponse search(SearchPasswordEntriesRequest request) {
         passwordEntryRequestValidator.validateSearch(request);
 
+        int currentUserId = currentUserProvider.requireUserId();
+        String jwtTokenId = currentUserProvider.requireJwtTokenId();
+
         return passwordEntryDesktopMapper.toSearchResponse(
-                searchPasswordEntriesUseCase.execute(
-                        request.getUserId(),
-                        request.getTitleQuery()
-                )
+            searchPasswordEntriesUseCase.execute(currentUserId,request.getTitleQuery(), jwtTokenId)
         );
     }
 

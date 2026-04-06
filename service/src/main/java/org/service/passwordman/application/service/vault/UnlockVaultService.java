@@ -33,9 +33,13 @@ public class UnlockVaultService implements UnlockVaultUseCase {
     }
 
     @Override
-    public void execute(int userId, String masterPassword) {
+    public void execute(int userId, String jwtTokenId, String masterPassword, String ipAddress) {
         if (userId <= 0) {
             throw new ValidationException("User id must be greater than 0.");
+        }
+
+        if (jwtTokenId == null || jwtTokenId.isBlank()) {
+            throw new ValidationException("JWT token id is required.");
         }
 
         if (masterPassword == null || masterPassword.trim().isEmpty()) {
@@ -46,11 +50,11 @@ public class UnlockVaultService implements UnlockVaultUseCase {
                 .orElseThrow(() -> new ValidationException("User not found."));
 
         if (!passwordHasher.matches(masterPassword, user.getMasterPasswordHash())) {
-            auditLogger.log(userId, "VAULT_UNLOCK_FAILED", "localhost");
+            auditLogger.log(userId, "VAULT_UNLOCK_FAILED", ipAddress);
             throw new InvalidCredentialsException();
         }
 
-        vaultSessionStore.unlock(userId, clock.now());
-        auditLogger.log(userId, "VAULT_UNLOCK_SUCCESS", "localhost");
+        vaultSessionStore.unlock(userId, jwtTokenId, clock.now());
+        auditLogger.log(userId, "VAULT_UNLOCK_SUCCESS", ipAddress);
     }
 }

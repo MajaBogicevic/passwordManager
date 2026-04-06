@@ -20,15 +20,15 @@ public class FolderController {
         return folderHandler.getSafe(folderId);
     }
 
-    public Object getByUser(int userId) {
-        return folderHandler.getByUserSafe(userId);
+    public Object getByUser() {
+        return folderHandler.getByUserSafe();
     }
 
     public Object rename(RenameFolderRequest request) {
         return folderHandler.renameSafe(request);
     }
 
-    public Object delete(int userId, int folderId) {
-        return folderHandler.deleteSafe(userId, folderId);
+    public Object delete(int folderId) {
+        return folderHandler.deleteSafe(folderId);
     }
 }

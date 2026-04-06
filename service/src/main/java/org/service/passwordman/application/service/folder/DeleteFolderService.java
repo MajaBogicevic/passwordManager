@@ -33,7 +33,7 @@ public class DeleteFolderService implements DeleteFolderUseCase {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
-        Folder folder = folderRepository.findById(folderId)
+        Folder folder = folderRepository.findByIdAndUserId(folderId, userId)
                 .orElseThrow(() -> new FolderNotFoundException(String.valueOf(folderId)));
 
         if (folder.getUserId() != userId) {
