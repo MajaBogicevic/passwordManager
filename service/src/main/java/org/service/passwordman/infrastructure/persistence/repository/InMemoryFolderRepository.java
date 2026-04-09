@@ -1,13 +1,13 @@
 package org.service.passwordman.infrastructure.persistence.repository;
 
-import org.service.passwordman.domain.model.Folder;
-import org.service.passwordman.domain.repository.FolderRepository;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.service.passwordman.domain.model.Folder;
+import org.service.passwordman.domain.repository.FolderRepository;
 
 public class InMemoryFolderRepository implements FolderRepository {
 
@@ -57,5 +57,16 @@ public class InMemoryFolderRepository implements FolderRepository {
     @Override
     public void deleteById(int folderId) {
         foldersById.remove(folderId);
+    }
+
+    @Override
+    public boolean deleteByIdAndUserId(int folderId, int userId) {
+        Folder folder = foldersById.get(folderId);
+
+        if (folder == null || folder.getUserId() != userId) {
+            return false;
+        }
+
+        return foldersById.remove(folderId, folder);
     }
 }

@@ -1,13 +1,13 @@
 package org.service.passwordman.infrastructure.persistence.repository;
 
-import org.service.passwordman.domain.model.AuditLog;
-import org.service.passwordman.domain.repository.AuditLogRepository;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.service.passwordman.domain.model.AuditLog;
+import org.service.passwordman.domain.repository.AuditLogRepository;
 
 public class InMemoryAuditLogRepository implements AuditLogRepository {
 
@@ -23,8 +23,12 @@ public class InMemoryAuditLogRepository implements AuditLogRepository {
             logToStore = new AuditLog(
                     newId,
                     auditLog.getUserId(),
-                    auditLog.getAction(),
-                    auditLog.getIp(),
+                    auditLog.getEventType(),
+                    auditLog.getOutcome(),
+                    auditLog.getReasonCode(),
+                    auditLog.getIpAddress(),
+                    auditLog.getSessionId(),
+                    auditLog.getDetails(),
                     auditLog.getTimestamp()
             );
         }
@@ -33,10 +37,11 @@ public class InMemoryAuditLogRepository implements AuditLogRepository {
     }
 
     @Override
-    public List<AuditLog> findByUserId(int userId) {
+    public List<AuditLog> findSecurityByUserId(int userId) {
         return logsById.values()
                 .stream()
                 .filter(log -> log.getUserId() == userId)
+                .filter(log -> log.getEventType().isSecurityEvent())
                 .sorted(Comparator.comparing(AuditLog::getTimestamp).reversed())
                 .toList();
     }

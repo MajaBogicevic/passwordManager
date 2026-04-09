@@ -2,6 +2,7 @@ package org.service.passwordman.infrastructure.audit;
 
 import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
+import org.service.passwordman.application.security.SecurityAuditEvent;
 import org.service.passwordman.domain.model.AuditLog;
 import org.service.passwordman.domain.repository.AuditLogRepository;
 
@@ -16,12 +17,16 @@ public class AuditLoggerAdapter implements AuditLogger {
     }
 
     @Override
-    public void log(int userId, String action, String ip) {
+    public void log(SecurityAuditEvent event) {
         AuditLog auditLog = new AuditLog(
                 0,
-                userId,
-                action,
-                ip,
+                event.getUserId(),
+                event.getEventType(),
+                event.getOutcome(),
+                event.getReasonCode(),
+                event.getIpAddress(),
+                event.getSessionId(),
+                event.getDetails(),
                 clock.now()
         );
 

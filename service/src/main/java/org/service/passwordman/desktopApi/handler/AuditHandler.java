@@ -1,13 +1,12 @@
 package org.service.passwordman.desktopApi.handler;
 
-import org.service.passwordman.application.usecase.audit.GetSecurityActivityUseCase;
-import org.service.passwordman.desktopApi.response.AuditLogResponse;
-import org.service.passwordman.domain.exception.ValidationException;
-import org.service.passwordman.domain.model.AuditLog;
-import org.service.passwordman.infrastructure.security.CurrentUserProvider;
-
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.service.passwordman.application.usecase.audit.GetSecurityActivityUseCase;
+import org.service.passwordman.desktopApi.response.AuditLogResponse;
+import org.service.passwordman.domain.model.AuditLog;
+import org.service.passwordman.infrastructure.security.CurrentUserProvider;
 
 public class AuditHandler {
 
@@ -34,8 +33,12 @@ public class AuditHandler {
                 .map(log -> new AuditLogResponse(
                         log.getId(),
                         log.getUserId(),
-                        log.getAction(),
-                        log.getIp(),
+                        log.getEventType().name(),
+                        log.getOutcome().name(),
+                        log.getReasonCode(),
+                        log.getIpAddress(),
+                        log.getSessionId(),
+                        log.getDetails(),
                         log.getTimestamp()
                 ))
                 .collect(Collectors.toList());

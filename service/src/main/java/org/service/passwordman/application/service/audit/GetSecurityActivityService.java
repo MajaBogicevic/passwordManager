@@ -1,12 +1,12 @@
 package org.service.passwordman.application.service.audit;
 
+import java.util.List;
+
 import org.service.passwordman.application.usecase.audit.GetSecurityActivityUseCase;
 import org.service.passwordman.domain.exception.UnauthorizedVaultAccessException;
 import org.service.passwordman.domain.model.AuditLog;
 import org.service.passwordman.domain.repository.AuditLogRepository;
 import org.service.passwordman.domain.repository.UserRepository;
-
-import java.util.List;
 
 public class GetSecurityActivityService implements GetSecurityActivityUseCase {
 
@@ -26,6 +26,6 @@ public class GetSecurityActivityService implements GetSecurityActivityUseCase {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
-        return auditLogRepository.findByUserId(userId);
+        return auditLogRepository.findSecurityByUserId(userId);
     }
 }

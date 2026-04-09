@@ -10,6 +10,7 @@ public interface UpdatePasswordEntryUseCase {
             String plainPassword,
             String notes,
             int folderId,
-            String jwtTokenId
+            String jwtTokenId,
+            String ipAddress
     );
 }

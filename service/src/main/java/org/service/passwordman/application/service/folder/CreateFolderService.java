@@ -24,13 +24,14 @@ public class CreateFolderService implements CreateFolderUseCase {
     }
 
     @Override
-    public void execute(int userId, String folderName) {
+    public void execute(int userId, String folderName, String ipAddress) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
         Folder folder = new Folder(0, userId, folderName);
         folderRepository.save(folder);
 
-        auditLogger.log(userId, "FOLDER_CREATED", null);
+        auditLogger.log(userId, "FOLDER_CREATED", ipAddress);
     }
 }
+

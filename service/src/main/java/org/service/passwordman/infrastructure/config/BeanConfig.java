@@ -6,14 +6,19 @@ import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
 import org.service.passwordman.application.port.EncryptionService;
 import org.service.passwordman.application.port.PasswordHasher;
+import org.service.passwordman.application.port.RateLimitStore;
+import org.service.passwordman.application.port.RefreshTokenStore;
+import org.service.passwordman.application.port.TokenBlacklistStore;
 import org.service.passwordman.application.port.TokenService;
+import org.service.passwordman.application.port.UserAuthInvalidationStore;
 import org.service.passwordman.application.port.VaultSessionStore;
 import org.service.passwordman.application.service.audit.GetSecurityActivityService;
 import org.service.passwordman.application.service.auth.ChangeLoginPasswordService;
 import org.service.passwordman.application.service.auth.ChangeMasterPasswordService;
 import org.service.passwordman.application.service.auth.LoginUserService;
+import org.service.passwordman.application.service.auth.LogoutUserService;
+import org.service.passwordman.application.service.auth.RefreshAccessTokenService;
 import org.service.passwordman.application.service.auth.RegisterUserService;
-import org.service.passwordman.application.service.entry.CopyPasswordService;
 import org.service.passwordman.application.service.entry.CreatePasswordEntryService;
 import org.service.passwordman.application.service.entry.DeletePasswordEntryService;
 import org.service.passwordman.application.service.entry.GetEntriesByFolderService;
@@ -35,8 +40,9 @@ import org.service.passwordman.application.usecase.audit.GetSecurityActivityUseC
 import org.service.passwordman.application.usecase.auth.ChangeLoginPasswordUseCase;
 import org.service.passwordman.application.usecase.auth.ChangeMasterPasswordUseCase;
 import org.service.passwordman.application.usecase.auth.LoginUserUseCase;
+import org.service.passwordman.application.usecase.auth.LogoutUserUseCase;
+import org.service.passwordman.application.usecase.auth.RefreshAccessTokenUseCase;
 import org.service.passwordman.application.usecase.auth.RegisterUserUseCase;
-import org.service.passwordman.application.usecase.entry.CopyPasswordUseCase;
 import org.service.passwordman.application.usecase.entry.CreatePasswordEntryUseCase;
 import org.service.passwordman.application.usecase.entry.DeletePasswordEntryUseCase;
 import org.service.passwordman.application.usecase.entry.GetEntriesByFolderUseCase;
@@ -81,14 +87,25 @@ import org.service.passwordman.domain.repository.PasswordEntryRepository;
 import org.service.passwordman.domain.repository.UserRepository;
 import org.service.passwordman.infrastructure.audit.AuditLoggerAdapter;
 import org.service.passwordman.infrastructure.crypt.CryptPasswordEncryptionAdapter;
-import org.service.passwordman.infrastructure.persistence.repository.InMemoryAuditLogRepository;
-import org.service.passwordman.infrastructure.persistence.repository.InMemoryFolderRepository;
-import org.service.passwordman.infrastructure.persistence.repository.InMemoryPasswordEntryRepository;
-import org.service.passwordman.infrastructure.persistence.repository.InMemoryUserRepository;
+import org.service.passwordman.infrastructure.persistence.adapter.JpaAuditLogRepositoryAdapter;
+import org.service.passwordman.infrastructure.persistence.adapter.JpaFolderRepositoryAdapter;
+import org.service.passwordman.infrastructure.persistence.adapter.JpaPasswordEntryRepositoryAdapter;
+import org.service.passwordman.infrastructure.persistence.adapter.JpaRefreshTokenStoreAdapter;
+import org.service.passwordman.infrastructure.persistence.adapter.JpaUserRepositoryAdapter;
+import org.service.passwordman.infrastructure.persistence.adapter.JpaVaultSessionStoreAdapter;
+import org.service.passwordman.infrastructure.persistence.jpa.SpringDataAuditLogJpaRepository;
+import org.service.passwordman.infrastructure.persistence.jpa.SpringDataFolderJpaRepository;
+import org.service.passwordman.infrastructure.persistence.jpa.SpringDataPasswordEntryJpaRepository;
+import org.service.passwordman.infrastructure.persistence.jpa.SpringDataRefreshTokenJpaRepository;
+import org.service.passwordman.infrastructure.persistence.jpa.SpringDataUserJpaRepository;
+import org.service.passwordman.infrastructure.persistence.jpa.SpringDataVaultSessionJpaRepository;
 import org.service.passwordman.infrastructure.security.BCryptPasswordHasher;
-import org.service.passwordman.infrastructure.security.JwtTokenService;
+import org.service.passwordman.infrastructure.security.ClientIp;
 import org.service.passwordman.infrastructure.security.CurrentUserProvider;
-import org.service.passwordman.infrastructure.session.InMemoryVaultSessionStore;
+import org.service.passwordman.infrastructure.security.InMemoryRateLimitStore;
+import org.service.passwordman.infrastructure.security.InMemoryTokenBlacklistStore;
+import org.service.passwordman.infrastructure.security.InMemoryUserAuthInvalidationStore;
+import org.service.passwordman.infrastructure.security.JwtTokenService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -99,10 +116,28 @@ public class BeanConfig {
 
     @Bean
     public TokenService tokenService(PasswordmanProperties properties) {
+        properties.validate();
+
         return new JwtTokenService(
                 properties.getJwtSecret(),
-                properties.getJwtExpirationMillis()
+                properties.getJwtAccessExpirationMillis(),
+                properties.getJwtRefreshExpirationMillis()
         );
+    }
+
+    @Bean
+    public TokenBlacklistStore tokenBlacklistStore() {
+        return new InMemoryTokenBlacklistStore();
+    }
+
+    @Bean
+    public UserAuthInvalidationStore userAuthInvalidationStore() {
+        return new InMemoryUserAuthInvalidationStore();
+    }
+
+    @Bean
+    public RefreshTokenStore refreshTokenStore(SpringDataRefreshTokenJpaRepository repository) {
+        return new JpaRefreshTokenStoreAdapter(repository);
     }
 
     @Bean
@@ -111,8 +146,8 @@ public class BeanConfig {
     }
 
     @Bean
-    public PasswordHasher passwordHasher() {
-        return new BCryptPasswordHasher();
+    public PasswordHasher passwordHasher(PasswordmanProperties properties) {
+        return new BCryptPasswordHasher(properties.getBcryptStrength());
     }
 
     @Bean
@@ -124,23 +159,33 @@ public class BeanConfig {
     }
 
     @Bean
-    public UserRepository userRepository() {
-        return new InMemoryUserRepository();
+    public UserRepository userRepository(SpringDataUserJpaRepository repository) {
+        return new JpaUserRepositoryAdapter(repository);
     }
 
     @Bean
-    public PasswordEntryRepository passwordEntryRepository() {
-        return new InMemoryPasswordEntryRepository();
+    public PasswordEntryRepository passwordEntryRepository(SpringDataPasswordEntryJpaRepository repository) {
+        return new JpaPasswordEntryRepositoryAdapter(repository);
     }
 
     @Bean
-    public FolderRepository folderRepository() {
-        return new InMemoryFolderRepository();
+    public FolderRepository folderRepository(SpringDataFolderJpaRepository repository) {
+        return new JpaFolderRepositoryAdapter(repository);
     }
 
     @Bean
-    public AuditLogRepository auditLogRepository() {
-        return new InMemoryAuditLogRepository();
+    public AuditLogRepository auditLogRepository(SpringDataAuditLogJpaRepository repository) {
+        return new JpaAuditLogRepositoryAdapter(repository);
+    }
+
+    @Bean
+    public VaultSessionStore vaultSessionStore(SpringDataVaultSessionJpaRepository repository) {
+        return new JpaVaultSessionStoreAdapter(repository);
+    }
+
+    @Bean
+    public RateLimitStore rateLimitStore() {
+        return new InMemoryRateLimitStore();
     }
 
     @Bean
@@ -154,10 +199,15 @@ public class BeanConfig {
     }
 
     @Bean
+    public ClientIp clientIp() {
+        return new ClientIp();
+    }
+
+    @Bean
     public RegisterUserUseCase registerUserUseCase(
             UserRepository userRepository,
             PasswordHasher passwordHasher,
-            Clock clock, 
+            Clock clock,
             AuditLogger auditLogger
     ) {
         return new RegisterUserService(userRepository, passwordHasher, clock, auditLogger);
@@ -167,9 +217,35 @@ public class BeanConfig {
     public LoginUserUseCase loginUserUseCase(
             UserRepository userRepository,
             PasswordHasher passwordHasher,
-            AuditLogger auditLogger
+            AuditLogger auditLogger,
+            RateLimitStore rateLimitStore,
+            PasswordmanProperties properties
     ) {
-        return new LoginUserService(userRepository, passwordHasher, auditLogger);
+        return new LoginUserService(
+                userRepository,
+                passwordHasher,
+                auditLogger,
+                rateLimitStore,
+                properties.getLoginRateLimitMaxAttempts(),
+                properties.getLoginRateLimitBlockDurationMillis()
+        );
+    }
+
+    @Bean
+    public LogoutUserUseCase logoutUserUseCase(
+            TokenBlacklistStore tokenBlacklistStore,
+            RefreshTokenStore refreshTokenStore,
+            AuditLogger auditLogger,
+            Clock clock,
+            UserAuthInvalidationStore userAuthInvalidationStore
+    ) {
+        return new LogoutUserService(
+                tokenBlacklistStore,
+                refreshTokenStore,
+                auditLogger,
+                clock,
+                userAuthInvalidationStore
+        );
     }
 
     @Bean
@@ -178,9 +254,20 @@ public class BeanConfig {
             PasswordHasher passwordHasher,
             VaultSessionStore vaultSessionStore,
             AuditLogger auditLogger,
-            Clock clock
+            Clock clock,
+            RateLimitStore rateLimitStore,
+            PasswordmanProperties properties
     ) {
-        return new UnlockVaultService(userRepository, passwordHasher, vaultSessionStore, auditLogger, clock);
+        return new UnlockVaultService(
+                userRepository,
+                passwordHasher,
+                vaultSessionStore,
+                auditLogger,
+                clock,
+                rateLimitStore,
+                properties.getVaultUnlockRateLimitMaxAttempts(),
+                properties.getVaultUnlockRateLimitBlockDurationMillis()
+        );
     }
 
     @Bean
@@ -194,55 +281,74 @@ public class BeanConfig {
     @Bean
     public AutoLockUseCase autoLockUseCase(
             VaultSessionStore vaultSessionStore,
+            AuditLogger auditLogger,
+            Clock clock
+    ) {
+        return new AutoLockService(
+                vaultSessionStore,
+                clock,
+                auditLogger,
+                Duration.ofMinutes(5)
+        );
+    }
+
+    @Bean
+    public RefreshAccessTokenUseCase refreshAccessTokenUseCase(
+            TokenService tokenService,
+            RefreshTokenStore refreshTokenStore,
+            RateLimitStore rateLimitStore,
+            PasswordmanProperties properties,
+            AuditLogger auditLogger
+    ) {
+        return new RefreshAccessTokenService(
+                tokenService,
+                refreshTokenStore,
+                auditLogger,
+                rateLimitStore,
+                properties.getRefreshRateLimitMaxAttempts(),
+                properties.getRefreshRateLimitBlockDurationMillis()
+        );
+    }
+
+    @Bean
+    public ChangeLoginPasswordUseCase changeLoginPasswordUseCase(
+            UserRepository userRepository,
+            PasswordHasher passwordHasher,
+            AuditLogger auditLogger,
             Clock clock,
-            AuditLogger auditLogger
+            RefreshTokenStore refreshTokenStore,
+            VaultSessionStore vaultSessionStore,
+            UserAuthInvalidationStore userAuthInvalidationStore
     ) {
-        return new AutoLockService(vaultSessionStore, clock ,auditLogger, Duration.ofMinutes(5));
-    }
-
-    @Bean
-    public CreateFolderUseCase createFolderUseCase(
-            FolderRepository folderRepository,
-            UserRepository userRepository,
-            AuditLogger auditLogger
-    ) {
-        return new CreateFolderService(folderRepository, userRepository, auditLogger);
-    }
-
-    @Bean
-    public GetFolderUseCase getFolderUseCase(FolderRepository folderRepository) {
-        return new GetFolderService(folderRepository);
-    }
-
-    @Bean
-    public GetFoldersByUserUseCase getFoldersByUserUseCase(
-            FolderRepository folderRepository,
-            UserRepository userRepository
-    ) {
-        return new GetFoldersByUserService(folderRepository, userRepository);
-    }
-
-    @Bean
-    public RenameFolderUseCase renameFolderUseCase(
-            FolderRepository folderRepository,
-            UserRepository userRepository,
-            AuditLogger auditLogger
-    ) {
-        return new RenameFolderService(folderRepository, userRepository, auditLogger);
-    }
-
-    @Bean
-    public DeleteFolderUseCase deleteFolderUseCase(
-            FolderRepository folderRepository,
-            PasswordEntryRepository passwordEntryRepository,
-            UserRepository userRepository,
-            AuditLogger auditLogger
-    ) {
-        return new DeleteFolderService(
-                folderRepository,
-                passwordEntryRepository,
+        return new ChangeLoginPasswordService(
                 userRepository,
-                auditLogger
+                passwordHasher,
+                auditLogger,
+                clock,
+                refreshTokenStore,
+                vaultSessionStore,
+                userAuthInvalidationStore
+        );
+    }
+
+    @Bean
+    public ChangeMasterPasswordUseCase changeMasterPasswordUseCase(
+            UserRepository userRepository,
+            PasswordHasher passwordHasher,
+            VaultSessionStore vaultSessionStore,
+            AuditLogger auditLogger,
+            Clock clock,
+            RefreshTokenStore refreshTokenStore,
+            UserAuthInvalidationStore userAuthInvalidationStore
+    ) {
+        return new ChangeMasterPasswordService(
+                userRepository,
+                passwordHasher,
+                vaultSessionStore,
+                auditLogger,
+                clock,
+                refreshTokenStore,
+                userAuthInvalidationStore
         );
     }
 
@@ -264,81 +370,6 @@ public class BeanConfig {
                 clock,
                 auditLogger,
                 folderRepository
-        );
-    }
-
-    @Bean
-    public GetPasswordEntryUseCase getPasswordEntryUseCase(
-            PasswordEntryRepository passwordEntryRepository,
-            VaultSessionStore vaultSessionStore
-    ) {
-        return new GetPasswordEntryService(passwordEntryRepository, vaultSessionStore);
-    }
-
-    @Bean
-    public GetEntriesByUserUseCase getEntriesByUserUseCase(
-            PasswordEntryRepository passwordEntryRepository,
-            UserRepository userRepository,
-            VaultSessionStore vaultSessionStore
-    ) {
-        return new GetEntriesByUserService(
-                passwordEntryRepository,
-                userRepository,
-                vaultSessionStore
-        );
-    }
-
-    @Bean
-    public SearchPasswordEntriesUseCase searchPasswordEntriesUseCase(
-            PasswordEntryRepository passwordEntryRepository,
-            AutoLockUseCase autoLockUseCase
-    ) {
-        return new SearchPasswordEntriesService(passwordEntryRepository, autoLockUseCase);
-    }
-    
-
-    @Bean
-    public GetEntriesByFolderUseCase getEntriesByFolderUseCase(
-            PasswordEntryRepository passwordEntryRepository,
-            FolderRepository folderRepository,
-            UserRepository userRepository,
-            VaultSessionStore vaultSessionStore
-    ) {
-        return new GetEntriesByFolderService(
-                passwordEntryRepository,
-                folderRepository,
-                userRepository,
-                vaultSessionStore
-        );
-    }
-
-    @Bean
-    public RevealPasswordUseCase revealPasswordUseCase(
-            PasswordEntryRepository passwordEntryRepository,
-            EncryptionService encryptionService,
-            AutoLockUseCase autoLockUseCase,
-            AuditLogger auditLogger
-    ) {
-        return new RevealPasswordService(
-                passwordEntryRepository,
-                encryptionService,
-                autoLockUseCase,
-                auditLogger
-        );
-    }
-
-    @Bean
-    public CopyPasswordUseCase copyPasswordUseCase(
-            PasswordEntryRepository passwordEntryRepository,
-            EncryptionService encryptionService,
-            AutoLockUseCase autoLockUseCase,
-            AuditLogger auditLogger
-    ) {
-        return new CopyPasswordService(
-                passwordEntryRepository,
-                encryptionService,
-                autoLockUseCase,
-                auditLogger
         );
     }
 
@@ -379,11 +410,114 @@ public class BeanConfig {
     }
 
     @Bean
-    public GetSecurityActivityUseCase getSecurityActivityUseCase(
-            AuditLogRepository auditLogRepository,
+    public GetPasswordEntryUseCase getPasswordEntryUseCase(
+            PasswordEntryRepository passwordEntryRepository,
+            VaultSessionStore vaultSessionStore
+    ) {
+        return new GetPasswordEntryService(
+                passwordEntryRepository,
+                vaultSessionStore
+        );
+    }
+
+    @Bean
+    public GetEntriesByUserUseCase getEntriesByUserUseCase(
+            PasswordEntryRepository passwordEntryRepository,
+            UserRepository userRepository,
+            VaultSessionStore vaultSessionStore
+    ) {
+        return new GetEntriesByUserService(
+                passwordEntryRepository,
+                userRepository,
+                vaultSessionStore
+        );
+    }
+
+    @Bean
+    public GetEntriesByFolderUseCase getEntriesByFolderUseCase(
+            PasswordEntryRepository passwordEntryRepository,
+            FolderRepository folderRepository,
+            UserRepository userRepository,
+            VaultSessionStore vaultSessionStore
+    ) {
+        return new GetEntriesByFolderService(
+                passwordEntryRepository,
+                folderRepository,
+                userRepository,
+                vaultSessionStore
+        );
+    }
+
+    @Bean
+    public SearchPasswordEntriesUseCase searchPasswordEntriesUseCase(
+            PasswordEntryRepository passwordEntryRepository,
+            AutoLockUseCase autoLockUseCase    
+        ) {
+        return new SearchPasswordEntriesService(
+                passwordEntryRepository,
+                autoLockUseCase
+        );
+    }
+
+    @Bean
+    public RevealPasswordUseCase revealPasswordUseCase(
+            PasswordEntryRepository passwordEntryRepository,
+            EncryptionService encryptionService,
+            AutoLockUseCase autoLockUseCase,
+            AuditLogger auditLogger
+    ) {
+        return new RevealPasswordService(
+                passwordEntryRepository,
+                encryptionService,
+                autoLockUseCase,
+                auditLogger
+        );
+    }
+
+    @Bean
+    public CreateFolderUseCase createFolderUseCase(
+            FolderRepository folderRepository,
+            UserRepository userRepository,
+            AuditLogger auditLogger
+    ) {
+        return new CreateFolderService(folderRepository, userRepository, auditLogger);
+    }
+
+    @Bean
+    public RenameFolderUseCase renameFolderUseCase(
+            FolderRepository folderRepository,
+            UserRepository userRepository,
+            AuditLogger auditLogger
+    ) {
+        return new RenameFolderService(folderRepository, userRepository, auditLogger);
+    }
+
+    @Bean
+    public DeleteFolderUseCase deleteFolderUseCase(
+            FolderRepository folderRepository,
+            PasswordEntryRepository passwordEntryRepository,
+            UserRepository userRepository,
+            AuditLogger auditLogger
+    ) {
+        return new DeleteFolderService(
+                folderRepository,
+                passwordEntryRepository,
+                userRepository,
+                auditLogger
+        );
+    }
+
+    @Bean
+    public GetFolderUseCase getFolderUseCase(FolderRepository folderRepository) {
+        return new GetFolderService(folderRepository);
+    }
+
+    @Bean
+    public GetFoldersByUserUseCase getFoldersByUserUseCase(
+            FolderRepository folderRepository,
             UserRepository userRepository
     ) {
-        return new GetSecurityActivityService(auditLogRepository, userRepository);
+        return new GetFoldersByUserService(folderRepository, userRepository);
     }
 
     @Bean
@@ -392,35 +526,26 @@ public class BeanConfig {
     }
 
     @Bean
-    public ChangeMasterPasswordUseCase changeMasterPasswordUseCase(
-            UserRepository userRepository,
-            PasswordHasher passwordHasher,
-            VaultSessionStore vaultSessionStore,
-            AuditLogger auditLogger,
-            Clock clock
+    public GetSecurityActivityUseCase getSecurityActivityUseCase(
+            AuditLogRepository auditLogRepository,
+            UserRepository userRepository
     ) {
-        return new ChangeMasterPasswordService(
-                userRepository,
-                passwordHasher,
-                vaultSessionStore,
-                auditLogger,
-                clock
-        );
+        return new GetSecurityActivityService(auditLogRepository, userRepository);
     }
 
-    @Bean 
-    public ChangeLoginPasswordUseCase changeLoginPasswordUseCase(
-        UserRepository userRepository,
-        PasswordHasher passwordHasher,
-        AuditLogger auditLogger,
-        Clock clock
-    ) {
-        return new ChangeLoginPasswordService(
-                userRepository,
-                passwordHasher,
-                auditLogger,
-                clock
-        );
+    @Bean
+    public AuthRequestValidator authRequestValidator() {
+        return new AuthRequestValidator();
+    }
+
+    @Bean
+    public FolderRequestValidator folderRequestValidator() {
+        return new FolderRequestValidator();
+    }
+
+    @Bean
+    public PasswordEntryRequestValidator passwordEntryRequestValidator() {
+        return new PasswordEntryRequestValidator();
     }
 
     @Bean
@@ -449,21 +574,6 @@ public class BeanConfig {
     }
 
     @Bean
-    public AuthRequestValidator authRequestValidator() {
-        return new AuthRequestValidator();
-    }
-
-    @Bean
-    public FolderRequestValidator folderRequestValidator() {
-        return new FolderRequestValidator();
-    }
-
-    @Bean
-    public PasswordEntryRequestValidator passwordEntryRequestValidator() {
-        return new PasswordEntryRequestValidator();
-    }
-
-    @Bean
     public AuthHandler authHandler(
             RegisterUserUseCase registerUserUseCase,
             LoginUserUseCase loginUserUseCase,
@@ -473,7 +583,11 @@ public class BeanConfig {
             AuthRequestValidator authRequestValidator,
             ApiHandler apiHandler,
             TokenService tokenService,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            LogoutUserUseCase logoutUserUseCase,
+            RefreshTokenStore refreshTokenStore,
+            RefreshAccessTokenUseCase refreshAccessTokenUseCase
+
     ) {
         return new AuthHandler(
                 registerUserUseCase,
@@ -484,28 +598,43 @@ public class BeanConfig {
                 authRequestValidator,
                 apiHandler,
                 tokenService,
-                currentUserProvider
+                currentUserProvider,
+                logoutUserUseCase,
+                refreshTokenStore,
+                refreshAccessTokenUseCase
+
         );
     }
 
     @Bean
-    public VaultHandler vaultHandler(
-            UnlockVaultUseCase unlockVaultUseCase,
-            LockVaultUseCase lockVaultUseCase,
-            AutoLockUseCase autoLockUseCase,
-            AuthDesktopMapper authDesktopMapper,
-            AuthRequestValidator authRequestValidator,
+    public PasswordEntryHandler passwordEntryHandler(
+            CreatePasswordEntryUseCase createPasswordEntryUseCase,
+            GetPasswordEntryUseCase getPasswordEntryUseCase,
+            GetEntriesByUserUseCase getEntriesByUserUseCase,
+            GetEntriesByFolderUseCase getEntriesByFolderUseCase,
+            RevealPasswordUseCase revealPasswordUseCase,
+            UpdatePasswordEntryUseCase updatePasswordEntryUseCase,
+            DeletePasswordEntryUseCase deletePasswordEntryUseCase,
+            PasswordEntryDesktopMapper passwordEntryDesktopMapper,
+            PasswordEntryRequestValidator passwordEntryRequestValidator,
+            SearchPasswordEntriesUseCase searchPasswordEntriesUseCase,
             ApiHandler apiHandler,
             CurrentUserProvider currentUserProvider
     ) {
-        return new VaultHandler(
-                unlockVaultUseCase,
-                lockVaultUseCase,
-                autoLockUseCase,
-                authDesktopMapper,
-                authRequestValidator,
+        return new PasswordEntryHandler(
+                createPasswordEntryUseCase,
+                getPasswordEntryUseCase,
+                getEntriesByUserUseCase,
+                getEntriesByFolderUseCase,
+                revealPasswordUseCase,
+                updatePasswordEntryUseCase,
+                deletePasswordEntryUseCase,
+                passwordEntryDesktopMapper,
+                passwordEntryRequestValidator,
+                searchPasswordEntriesUseCase,
                 apiHandler,
                 currentUserProvider
+                
         );
     }
 
@@ -535,33 +664,21 @@ public class BeanConfig {
     }
 
     @Bean
-    public PasswordEntryHandler passwordEntryHandler(
-            CreatePasswordEntryUseCase createPasswordEntryUseCase,
-            GetPasswordEntryUseCase getPasswordEntryUseCase,
-            GetEntriesByUserUseCase getEntriesByUserUseCase,
-            GetEntriesByFolderUseCase getEntriesByFolderUseCase,
-            RevealPasswordUseCase revealPasswordUseCase,
-            CopyPasswordUseCase copyPasswordUseCase,
-            UpdatePasswordEntryUseCase updatePasswordEntryUseCase,
-            DeletePasswordEntryUseCase deletePasswordEntryUseCase,
-            PasswordEntryDesktopMapper passwordEntryDesktopMapper,
-            PasswordEntryRequestValidator passwordEntryRequestValidator,
-            SearchPasswordEntriesUseCase searchPasswordEntriesUseCase,
+    public VaultHandler vaultHandler(
+            UnlockVaultUseCase unlockVaultUseCase,
+            LockVaultUseCase lockVaultUseCase,
+            AutoLockUseCase autoLockUseCase,
+            AuthDesktopMapper authDesktopMapper,
+            AuthRequestValidator authRequestValidator,
             ApiHandler apiHandler,
             CurrentUserProvider currentUserProvider
     ) {
-        return new PasswordEntryHandler(
-                createPasswordEntryUseCase,
-                getPasswordEntryUseCase,
-                getEntriesByUserUseCase,
-                getEntriesByFolderUseCase,
-                revealPasswordUseCase,
-                copyPasswordUseCase,
-                updatePasswordEntryUseCase,
-                deletePasswordEntryUseCase,
-                passwordEntryDesktopMapper,
-                passwordEntryRequestValidator,
-                searchPasswordEntriesUseCase,
+        return new VaultHandler(
+                unlockVaultUseCase,
+                lockVaultUseCase,
+                autoLockUseCase,
+                authDesktopMapper,
+                authRequestValidator,
                 apiHandler,
                 currentUserProvider
         );
@@ -573,7 +690,11 @@ public class BeanConfig {
             ApiHandler apiHandler,
             CurrentUserProvider currentUserProvider
     ) {
-        return new AuditHandler(getSecurityActivityUseCase, apiHandler, currentUserProvider);
+        return new AuditHandler(
+                getSecurityActivityUseCase,
+                apiHandler,
+                currentUserProvider
+        );
     }
 
     @Bean
@@ -585,23 +706,36 @@ public class BeanConfig {
     }
 
     @Bean
-    public AuthController authController(AuthHandler authHandler) {
-        return new AuthController(authHandler);
+    public AuthController authController(AuthHandler authHandler, ClientIp clientIp) {
+        return new AuthController(authHandler, clientIp);
     }
 
     @Bean
-    public VaultController vaultController(VaultHandler vaultHandler) {
-        return new VaultController(vaultHandler);
+    public PasswordEntryController passwordEntryController(
+            PasswordEntryHandler passwordEntryHandler,
+            ClientIp clientIp
+    ) {
+        return new PasswordEntryController(passwordEntryHandler, clientIp);
     }
 
     @Bean
-    public FolderController folderController(FolderHandler folderHandler) {
-        return new FolderController(folderHandler);
+    public FolderController folderController(FolderHandler folderHandler, ClientIp clientIp) {
+        return new FolderController(folderHandler, clientIp);
     }
 
     @Bean
-    public PasswordEntryController passwordEntryController(PasswordEntryHandler passwordEntryHandler) {
-        return new PasswordEntryController(passwordEntryHandler);
+    public VaultController vaultController(VaultHandler vaultHandler, ClientIp clientIp) {
+        return new VaultController(vaultHandler, clientIp);
+    }
+
+    @Bean
+    public AuditController auditController(AuditHandler auditHandler) {
+        return new AuditController(auditHandler);
+    }
+
+    @Bean
+    public PasswordGeneratorController passwordGeneratorController(PasswordGeneratorHandler passwordGeneratorHandler) {
+        return new PasswordGeneratorController(passwordGeneratorHandler);
     }
 
     @Bean
@@ -620,37 +754,6 @@ public class BeanConfig {
                 passwordEntryController,
                 auditController,
                 passwordGeneratorController
-        );
-    }
-
-    @Bean
-    public AuditController auditController(AuditHandler auditHandler) {
-        return new AuditController(auditHandler);
-    }
-
-    @Bean
-    public PasswordGeneratorController passwordGeneratorController(
-            PasswordGeneratorHandler passwordGeneratorHandler
-    ) {
-        return new PasswordGeneratorController(passwordGeneratorHandler);
-    }
-
-    @Bean
-    public VaultSessionStore vaultSessionStore() {
-        return new InMemoryVaultSessionStore();
-    }
-
-    @Bean
-    public AutoLockService autoLockService(
-            VaultSessionStore vaultSessionStore,
-            Clock clock,
-            AuditLogger auditLogger
-    ) {
-        return new AutoLockService(
-                vaultSessionStore,
-                clock,
-                auditLogger,
-                Duration.ofMinutes(5)
         );
     }
 }

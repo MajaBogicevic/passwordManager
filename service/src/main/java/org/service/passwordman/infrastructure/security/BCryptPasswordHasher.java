@@ -8,8 +8,8 @@ public class BCryptPasswordHasher implements PasswordHasher {
 
     private final PasswordEncoder passwordEncoder;
 
-    public BCryptPasswordHasher() {
-        this.passwordEncoder = new BCryptPasswordEncoder();
+    public BCryptPasswordHasher(int strength) {
+        this.passwordEncoder = new BCryptPasswordEncoder(strength);
     }
 
     @Override

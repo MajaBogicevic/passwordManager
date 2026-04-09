@@ -29,23 +29,23 @@ public class DeleteFolderService implements DeleteFolderUseCase {
     }
 
     @Override
-    public void execute(int userId, int folderId) {
+    public void execute(int userId, int folderId, String ipAddress) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
         Folder folder = folderRepository.findByIdAndUserId(folderId, userId)
                 .orElseThrow(() -> new FolderNotFoundException(String.valueOf(folderId)));
 
-        if (folder.getUserId() != userId) {
-            throw new UnauthorizedVaultAccessException();
-        }
-
-        boolean folderHasEntries = !passwordEntryRepository.findByFolderId(folderId).isEmpty();
+        boolean folderHasEntries = !passwordEntryRepository.findByFolderIdAndUserId(folder.getId(), userId).isEmpty();
         if (folderHasEntries) {
             throw new IllegalStateException("Folder cannot be deleted because it still contains password entries.");
         }
 
-        folderRepository.deleteById(folderId);
-        auditLogger.log(userId, "FOLDER_DELETED", folder.getName());
+        boolean deleted = folderRepository.deleteByIdAndUserId(folder.getId(), userId);
+        if (!deleted) {
+            throw new FolderNotFoundException(String.valueOf(folderId));
+        }
+
+        auditLogger.log(userId, "FOLDER_DELETED", ipAddress);
     }
 }

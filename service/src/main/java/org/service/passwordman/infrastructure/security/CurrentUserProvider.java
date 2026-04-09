@@ -26,7 +26,15 @@ public class CurrentUserProvider {
         return requireAuthenticatedUser().getUsername();
     }
 
+    public String requireSessionId() {
+        return requireAuthenticatedUser().getSessionId();
+    }
+
     public String requireJwtTokenId() {
         return requireAuthenticatedUser().getJwtTokenId();
+    }
+
+    public long requireAccessTokenExpiresAtMillis() {
+        return requireAuthenticatedUser().getAccessTokenExpiresAtMillis();
     }
 }

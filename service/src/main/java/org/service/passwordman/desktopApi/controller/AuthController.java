@@ -1,32 +1,71 @@
 package org.service.passwordman.desktopApi.controller;
 
 import org.service.passwordman.desktopApi.handler.AuthHandler;
-import org.service.passwordman.desktopApi.request.ChangeMasterPasswordRequest;
 import org.service.passwordman.desktopApi.request.ChangeLoginPasswordRequest;
+import org.service.passwordman.desktopApi.request.ChangeMasterPasswordRequest;
 import org.service.passwordman.desktopApi.request.LoginRequest;
+import org.service.passwordman.desktopApi.request.LogoutRequest;
+import org.service.passwordman.desktopApi.request.RefreshTokenRequest;
 import org.service.passwordman.desktopApi.request.RegisterRequest;
+import org.service.passwordman.infrastructure.security.ClientIp;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class AuthController {
 
     private final AuthHandler authHandler;
+    private final ClientIp clientIp;
 
-    public AuthController(AuthHandler authHandler) {
+    public AuthController(AuthHandler authHandler, ClientIp clientIp) {
         this.authHandler = authHandler;
+        this.clientIp = clientIp;
     }
 
-    public Object register(RegisterRequest request) {
-        return authHandler.registerSafe(request);
+    public Object register(RegisterRequest request, HttpServletRequest httpRequest) {
+        return authHandler.registerSafe(request, clientIp.resolve(httpRequest));
     }
 
-    public Object login(LoginRequest request) {
-        return authHandler.loginSafe(request);
+    public Object register(RegisterRequest request, String clientIpAddress) {
+        return authHandler.registerSafe(request, clientIpAddress);
     }
 
-    public Object changeMasterPassword(ChangeMasterPasswordRequest request) {
-        return authHandler.changeMasterPasswordSafe(request);
+    public Object login(LoginRequest request, HttpServletRequest httpRequest) {
+        return authHandler.loginSafe(request, clientIp.resolve(httpRequest));
     }
 
-    public Object changeLoginPassword(ChangeLoginPasswordRequest request) {
-        return authHandler.changeLoginPasswordSafe(request);
+    public Object login(LoginRequest request, String clientIpAddress) {
+        return authHandler.loginSafe(request, clientIpAddress);
+    }
+
+    public Object changeMasterPassword(ChangeMasterPasswordRequest request, HttpServletRequest httpRequest) {
+        return authHandler.changeMasterPasswordSafe(request, clientIp.resolve(httpRequest));
+    }
+
+    public Object changeMasterPassword(ChangeMasterPasswordRequest request, String clientIpAddress) {
+        return authHandler.changeMasterPasswordSafe(request, clientIpAddress);
+    }
+
+    public Object changeLoginPassword(ChangeLoginPasswordRequest request, HttpServletRequest httpRequest) {
+        return authHandler.changeLoginPasswordSafe(request, clientIp.resolve(httpRequest));
+    }
+
+    public Object changeLoginPassword(ChangeLoginPasswordRequest request, String clientIpAddress) {
+        return authHandler.changeLoginPasswordSafe(request, clientIpAddress);
+    }
+
+    public Object logout(LogoutRequest request, HttpServletRequest httpRequest) {
+        return authHandler.logoutSafe(request, clientIp.resolve(httpRequest));
+    }
+
+    public Object logout(LogoutRequest request, String clientIpAddress) {
+        return authHandler.logoutSafe(request, clientIpAddress);
+    }
+
+    public Object refreshToken(RefreshTokenRequest request, HttpServletRequest httpRequest) {
+        return authHandler.refreshTokenSafe(request, clientIp.resolve(httpRequest));
+    }
+
+    public Object refreshToken(RefreshTokenRequest request, String clientIpAddress) {
+        return authHandler.refreshTokenSafe(request, clientIpAddress);
     }
 }

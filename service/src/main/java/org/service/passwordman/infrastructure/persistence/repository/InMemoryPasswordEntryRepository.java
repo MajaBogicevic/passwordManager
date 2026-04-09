@@ -1,13 +1,13 @@
 package org.service.passwordman.infrastructure.persistence.repository;
 
-import org.service.passwordman.domain.model.PasswordEntry;
-import org.service.passwordman.domain.repository.PasswordEntryRepository;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.service.passwordman.domain.model.PasswordEntry;
+import org.service.passwordman.domain.repository.PasswordEntryRepository;
 
 public class InMemoryPasswordEntryRepository implements PasswordEntryRepository {
 
@@ -31,15 +31,6 @@ public class InMemoryPasswordEntryRepository implements PasswordEntryRepository 
     }
 
     @Override
-    public List<PasswordEntry> findByFolderIdAndUserId(int folderId, int userId) {
-        return entriesById.values()
-                .stream()
-                .filter(entry -> entry.getFolderId() == folderId)
-                .filter(entry -> entry.getUserId() == userId)
-                .toList();
-    }
-
-    @Override
     public List<PasswordEntry> findByUserId(int userId) {
         return entriesById.values()
                 .stream()
@@ -48,30 +39,31 @@ public class InMemoryPasswordEntryRepository implements PasswordEntryRepository 
     }
 
     @Override
-    public List<PasswordEntry> findByFolderId(int folderId) {
+    public List<PasswordEntry> findByFolderIdAndUserId(int folderId, int userId) {
         return entriesById.values()
                 .stream()
-                .filter(entry -> entry.getFolderId() == folderId)
+                .filter(entry -> entry.getFolderId() == folderId && entry.getUserId() == userId)
                 .toList();
     }
 
     @Override
-    public void save(PasswordEntry entry) {
-        PasswordEntry entryToStore = entry;
+    public void save(PasswordEntry passwordEntry) {
+        PasswordEntry entryToStore = passwordEntry;
 
-        if (entry.getId() == 0) {
+        if (passwordEntry.getId() == 0) {
             int newId = idGenerator.getAndIncrement();
+
             entryToStore = new PasswordEntry(
                     newId,
-                    entry.getUserId(),
-                    entry.getTitle(),
-                    entry.getUrl(),
-                    entry.getUsername(),
-                    entry.getEncryptedPassword(),
-                    entry.getNotes(),
-                    entry.getFolderId(),
-                    entry.getCreatedAt(),
-                    entry.getUpdatedAt()
+                    passwordEntry.getUserId(),
+                    passwordEntry.getTitle(),
+                    passwordEntry.getUrl(),
+                    passwordEntry.getUsername(),
+                    passwordEntry.getEncryptedPassword(),
+                    passwordEntry.getNotes(),
+                    passwordEntry.getFolderId(),
+                    passwordEntry.getCreatedAt(),
+                    passwordEntry.getUpdatedAt()
             );
         }
 
@@ -84,14 +76,27 @@ public class InMemoryPasswordEntryRepository implements PasswordEntryRepository 
     }
 
     @Override
+    public boolean deleteByIdAndUserId(int entryId, int userId) {
+        PasswordEntry entry = entriesById.get(entryId);
+
+        if (entry == null || entry.getUserId() != userId) {
+            return false;
+        }
+
+        return entriesById.remove(entryId, entry);
+    }
+
+    @Override
     public List<PasswordEntry> searchByUserIdAndTitle(int userId, String titleQuery) {
         String normalizedQuery = titleQuery.trim().toLowerCase();
 
-        if (normalizedQuery.isEmpty()) {
-            return findByUserId(userId);
-        }
-
-        return entriesById.values().stream().filter(entry -> entry.getUserId() == userId).filter(entry -> entry.getTitle() != null).filter(entry -> entry.getTitle().toLowerCase().contains(normalizedQuery)).toList();
-        }
-
+        return entriesById.values()
+                .stream()
+                .filter(entry -> entry.getUserId() == userId)
+                .filter(entry -> {
+                    String title = entry.getTitle();
+                    return title != null && title.toLowerCase().contains(normalizedQuery);
+                })
+                .toList();
+    }
 }

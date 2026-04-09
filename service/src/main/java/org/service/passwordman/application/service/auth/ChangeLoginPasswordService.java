@@ -1,14 +1,21 @@
 package org.service.passwordman.application.service.auth;
 
+import java.time.ZoneId;
+
 import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
 import org.service.passwordman.application.port.PasswordHasher;
+import org.service.passwordman.application.port.RefreshTokenStore;
+import org.service.passwordman.application.port.UserAuthInvalidationStore;
+import org.service.passwordman.application.port.VaultSessionStore;
+import org.service.passwordman.application.security.SecurityAuditEvent;
 import org.service.passwordman.application.usecase.auth.ChangeLoginPasswordUseCase;
+import org.service.passwordman.domain.exception.InvalidCredentialsException;
+import org.service.passwordman.domain.exception.UserNotFoundException;
 import org.service.passwordman.domain.exception.ValidationException;
+import org.service.passwordman.domain.model.SecurityEventType;
 import org.service.passwordman.domain.model.User;
 import org.service.passwordman.domain.repository.UserRepository;
-import org.service.passwordman.domain.exception.UserNotFoundException;
-import org.service.passwordman.domain.exception.InvalidCredentialsException;
 
 public class ChangeLoginPasswordService implements ChangeLoginPasswordUseCase {
 
@@ -16,17 +23,26 @@ public class ChangeLoginPasswordService implements ChangeLoginPasswordUseCase {
     private final PasswordHasher passwordHasher;
     private final AuditLogger auditLogger;
     private final Clock clock;
+    private final RefreshTokenStore refreshTokenStore;
+    private final VaultSessionStore vaultSessionStore;
+    private final UserAuthInvalidationStore userAuthInvalidationStore;
 
     public ChangeLoginPasswordService(
             UserRepository userRepository,
             PasswordHasher passwordHasher,
             AuditLogger auditLogger,
-            Clock clock
+            Clock clock,
+            RefreshTokenStore refreshTokenStore,
+            VaultSessionStore vaultSessionStore,
+            UserAuthInvalidationStore userAuthInvalidationStore
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.auditLogger = auditLogger;
         this.clock = clock;
+        this.refreshTokenStore = refreshTokenStore;
+        this.vaultSessionStore = vaultSessionStore;
+        this.userAuthInvalidationStore = userAuthInvalidationStore;
     }
 
     @Override
@@ -51,25 +67,48 @@ public class ChangeLoginPasswordService implements ChangeLoginPasswordUseCase {
                 .orElseThrow(UserNotFoundException::new);
 
         if (!passwordHasher.matches(oldLoginPassword, user.getLoginPasswordHash())) {
-            auditLogger.log(userId, "CHANGE_LOGIN_PASSWORD_FAILED", ipAddress);
+            auditLogger.log(SecurityAuditEvent.failure(
+                    userId,
+                    SecurityEventType.LOGIN_PASSWORD_CHANGED,
+                    "INVALID_OLD_LOGIN_PASSWORD",
+                    ipAddress,
+                    null,
+                    "Login password change failed because old password did not match."
+            ));
             throw new InvalidCredentialsException();
         }
 
         String newHash = passwordHasher.hash(newLoginPassword);
 
         User updatedUser = new User(
-            user.getId(),
-            user.getEmail(),
-            user.getUsername(),
-            newHash, 
-            user.getMasterPasswordHash(), 
-            user.getNotes(),
-            user.getCreatedAt(),
-            clock.now()
+                user.getId(),
+                user.getEmail(),
+                user.getUsername(),
+                newHash,
+                user.getMasterPasswordHash(),
+                user.getNotes(),
+                user.getCreatedAt(),
+                clock.now()
         );
 
         userRepository.save(updatedUser);
 
-        auditLogger.log(userId, "CHANGE_LOGIN_PASSWORD_SUCCESS", ipAddress);
+        refreshTokenStore.revokeAllByUserId(userId);
+        vaultSessionStore.lockAllForUser(userId);
+
+        long cutoffMillis = clock.now()
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+
+        userAuthInvalidationStore.invalidateAllTokensForUser(userId, cutoffMillis);
+
+        auditLogger.log(SecurityAuditEvent.success(
+                userId,
+                SecurityEventType.LOGIN_PASSWORD_CHANGED,
+                ipAddress,
+                null,
+                "Login password changed successfully. Sessions invalidated."
+        ));
     }
 }

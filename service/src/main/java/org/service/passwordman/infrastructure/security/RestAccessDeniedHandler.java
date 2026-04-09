@@ -1,11 +1,12 @@
 package org.service.passwordman.infrastructure.security;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
-import java.io.IOException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
@@ -18,10 +19,12 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType("application/json");
+
         response.getWriter().write("""
                 {
-                  "success": false,
-                  "message": "Forbidden"
+                  "code": "FORBIDDEN",
+                  "message": "You do not have permission to access this resource.",
+                  "details": null
                 }
                 """);
     }

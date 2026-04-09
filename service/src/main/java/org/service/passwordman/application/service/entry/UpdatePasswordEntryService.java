@@ -6,13 +6,13 @@ import org.service.passwordman.application.port.EncryptionService;
 import org.service.passwordman.application.port.VaultSessionStore;
 import org.service.passwordman.application.usecase.entry.UpdatePasswordEntryUseCase;
 import org.service.passwordman.domain.exception.EntryNotFoundException;
+import org.service.passwordman.domain.exception.FolderNotFoundException;
 import org.service.passwordman.domain.exception.UnauthorizedVaultAccessException;
 import org.service.passwordman.domain.exception.VaultSessionExpiredException;
-import org.service.passwordman.domain.exception.FolderNotFoundException;
 import org.service.passwordman.domain.model.PasswordEntry;
+import org.service.passwordman.domain.repository.FolderRepository;
 import org.service.passwordman.domain.repository.PasswordEntryRepository;
 import org.service.passwordman.domain.repository.UserRepository;
-import org.service.passwordman.domain.repository.FolderRepository;
 
 public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
 
@@ -52,7 +52,8 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
             String plainPassword,
             String notes,
             int folderId,
-            String jwtTokenId
+            String jwtTokenId,
+            String ipAddress
     ) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
@@ -82,6 +83,6 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
         );
 
         passwordEntryRepository.save(entry);
-        auditLogger.log(userId, "PASSWORD_ENTRY_UPDATED", null);
+        auditLogger.log(userId, "PASSWORD_ENTRY_UPDATED", ipAddress);
     }
 }

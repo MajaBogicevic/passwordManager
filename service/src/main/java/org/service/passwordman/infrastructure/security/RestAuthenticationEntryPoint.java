@@ -1,11 +1,12 @@
 package org.service.passwordman.infrastructure.security;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
-import java.io.IOException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
@@ -18,10 +19,12 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
+
         response.getWriter().write("""
                 {
-                  "success": false,
-                  "message": "Unauthorized"
+                  "code": "UNAUTHORIZED",
+                  "message": "Authentication is required.",
+                  "details": null
                 }
                 """);
     }

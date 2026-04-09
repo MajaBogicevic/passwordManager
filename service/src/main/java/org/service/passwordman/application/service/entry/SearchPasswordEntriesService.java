@@ -1,12 +1,12 @@
 package org.service.passwordman.application.service.entry;
 
+import java.util.List;
+
 import org.service.passwordman.application.usecase.entry.SearchPasswordEntriesUseCase;
+import org.service.passwordman.application.usecase.vault.AutoLockUseCase;
 import org.service.passwordman.domain.exception.ValidationException;
 import org.service.passwordman.domain.model.PasswordEntry;
 import org.service.passwordman.domain.repository.PasswordEntryRepository;
-import org.service.passwordman.application.usecase.vault.AutoLockUseCase;
-
-import java.util.List;
 
 public class SearchPasswordEntriesService implements SearchPasswordEntriesUseCase {
 
@@ -27,8 +27,8 @@ public class SearchPasswordEntriesService implements SearchPasswordEntriesUseCas
             throw new ValidationException("User id must be greater than 0.");
         }
 
-        if (titleQuery == null) {
-            throw new ValidationException("Search query must not be null.");
+        if (titleQuery == null || titleQuery.isBlank()) {
+            throw new ValidationException("Search query must not be blank.");
         }
 
         autoLockUseCase.ensureVaultIsActive(userId, jwtTokenId, null);

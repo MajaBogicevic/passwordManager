@@ -37,7 +37,7 @@ public class VaultHandler {
         this.currentUserProvider = currentUserProvider;
     }
 
-    public AuthResponse unlock(UnlockVaultRequest request) {
+    public AuthResponse unlock(UnlockVaultRequest request, String clientIp) {
         authRequestValidator.validateUnlock(request);
 
         int currentUserId = currentUserProvider.requireUserId();
@@ -47,37 +47,37 @@ public class VaultHandler {
                 currentUserId,
                 jwtTokenId,
                 request.getMasterPassword(),
-                null
+                clientIp
         );
 
         return authDesktopMapper.success("Vault successfully unlocked.");
     }
 
-    public Object unlockSafe(UnlockVaultRequest request) {
-        return apiHandler.execute(() -> unlock(request));
+    public Object unlockSafe(UnlockVaultRequest request, String clientIp) {
+        return apiHandler.execute(() -> unlock(request, clientIp));
     }
 
-    public AuthResponse lock() {
+    public AuthResponse lock(String clientIp) {
         int currentUserId = currentUserProvider.requireUserId();
         String jwtTokenId = currentUserProvider.requireJwtTokenId();
 
-        lockVaultUseCase.execute(currentUserId, jwtTokenId, null);
+        lockVaultUseCase.execute(currentUserId, jwtTokenId, clientIp);
         return authDesktopMapper.success("Vault successfully locked.");
     }
 
-    public Object lockSafe() {
-        return apiHandler.execute(this::lock);
+    public Object lockSafe(String clientIp) {
+        return apiHandler.execute(() -> lock(clientIp));
     }
 
-    public AuthResponse autoLock() {
+    public AuthResponse autoLock(String clientIp) {
         int currentUserId = currentUserProvider.requireUserId();
         String jwtTokenId = currentUserProvider.requireJwtTokenId();
 
-        autoLockUseCase.execute(currentUserId, jwtTokenId, null);
+        autoLockUseCase.execute(currentUserId, jwtTokenId, clientIp);
         return authDesktopMapper.success("Vault auto-lock executed.");
     }
 
-    public Object autoLockSafe() {
-        return apiHandler.execute(this::autoLock);
+    public Object autoLockSafe(String clientIp) {
+        return apiHandler.execute(() -> autoLock(clientIp));
     }
 }

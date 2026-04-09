@@ -1,14 +1,13 @@
 package org.service.passwordman.desktopApi.request;
 
 public class CreatePasswordEntryRequest {
-    private int userId;
+
     private String title;
     private String url;
     private String username;
     private String plainPassword;
     private String notes;
     private int folderId;
-    private String ipAddress;
 
     public CreatePasswordEntryRequest() {
     }
@@ -19,8 +18,7 @@ public class CreatePasswordEntryRequest {
             String username,
             String plainPassword,
             String notes,
-            int folderId,
-            String ipAddress
+            int folderId
     ) {
         this.title = title;
         this.url = url;
@@ -28,7 +26,6 @@ public class CreatePasswordEntryRequest {
         this.plainPassword = plainPassword;
         this.notes = notes;
         this.folderId = folderId;
-        this.ipAddress = ipAddress;
     }
 
     public String getTitle() {
@@ -55,7 +52,4 @@ public class CreatePasswordEntryRequest {
         return folderId;
     }
 
-    public String getIpAddress() {
-        return ipAddress;
-    }
 }

@@ -4,15 +4,15 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class PasswordEntry {
-    private int id;
-    private int userId;
+    private final int id;
+    private final int userId;
     private String title;
     private String url;
     private String username;
     private String encryptedPassword;
     private String notes;
     private int folderId;
-    private LocalDateTime createdAt;
+    private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public PasswordEntry(

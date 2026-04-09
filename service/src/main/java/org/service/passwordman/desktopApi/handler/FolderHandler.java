@@ -1,5 +1,8 @@
 package org.service.passwordman.desktopApi.handler;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.service.passwordman.application.usecase.folder.CreateFolderUseCase;
 import org.service.passwordman.application.usecase.folder.DeleteFolderUseCase;
 import org.service.passwordman.application.usecase.folder.GetFolderUseCase;
@@ -13,9 +16,6 @@ import org.service.passwordman.desktopApi.response.FolderResponse;
 import org.service.passwordman.desktopApi.validation.FolderRequestValidator;
 import org.service.passwordman.domain.model.Folder;
 import org.service.passwordman.infrastructure.security.CurrentUserProvider;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class FolderHandler {
 
@@ -51,11 +51,19 @@ public class FolderHandler {
         this.currentUserProvider = currentUserProvider;
     }
 
-    public AuthResponse create(CreateFolderRequest request) {
+    public AuthResponse create(CreateFolderRequest request, String clientIp) {
         folderRequestValidator.validateCreate(request);
         int currentUserId = currentUserProvider.requireUserId();
-        createFolderUseCase.execute(currentUserId, request.getFolderName());
+        createFolderUseCase.execute(currentUserId, request.getFolderName(), clientIp);
         return new AuthResponse(true, "Folder successfully created.");
+    }
+
+    public AuthResponse create(CreateFolderRequest request) {
+        return create(request, null);
+    }
+
+    public Object createSafe(CreateFolderRequest request, String clientIp) {
+        return apiHandler.execute(() -> create(request, clientIp));
     }
 
     public Object createSafe(CreateFolderRequest request) {
@@ -84,7 +92,7 @@ public class FolderHandler {
         return apiHandler.execute(this::getByUserCurrentUser);
     }
 
-    public AuthResponse rename(RenameFolderRequest request) {
+    public AuthResponse rename(RenameFolderRequest request, String clientIp) {
         folderRequestValidator.validateRename(request);
 
         int currentUserId = currentUserProvider.requireUserId();
@@ -92,21 +100,38 @@ public class FolderHandler {
         renameFolderUseCase.execute(
                 currentUserId,
                 request.getFolderId(),
-                request.getNewName()
+                request.getNewName(),
+                clientIp
         );
 
         return new AuthResponse(true, "Folder successfully renamed.");
+    }
+
+    public AuthResponse rename(RenameFolderRequest request) {
+        return rename(request, null);
+    }
+
+    public Object renameSafe(RenameFolderRequest request, String clientIp) {
+        return apiHandler.execute(() -> rename(request, clientIp));
     }
 
     public Object renameSafe(RenameFolderRequest request) {
         return apiHandler.execute(() -> rename(request));
     }
 
-    public AuthResponse delete(int folderId) {
+    public AuthResponse delete(int folderId, String clientIp) {
         int currentUserId = currentUserProvider.requireUserId();
-        folderRequestValidator.validateDelete(currentUserId, folderId);
-        deleteFolderUseCase.execute(currentUserId, folderId);
+        folderRequestValidator.validateDelete(folderId);
+        deleteFolderUseCase.execute(currentUserId, folderId, clientIp);
         return new AuthResponse(true, "Folder successfully deleted.");
+    }
+
+    public AuthResponse delete(int folderId) {
+        return delete(folderId, null);
+    }
+
+    public Object deleteSafe(int folderId, String clientIp) {
+        return apiHandler.execute(() -> delete(folderId, clientIp));
     }
 
     public Object deleteSafe(int folderId) {

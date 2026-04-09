@@ -1,10 +1,12 @@
 package org.service.passwordman.domain.repository;
 
-import org.service.passwordman.domain.model.AuditLog;
-
 import java.util.List;
 
+import org.service.passwordman.domain.model.AuditLog;
+
 public interface AuditLogRepository {
+
     void save(AuditLog auditLog);
-    List<AuditLog> findByUserId(int userId);
+
+    List<AuditLog> findSecurityByUserId(int userId);
 }

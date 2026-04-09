@@ -6,10 +6,12 @@ import java.time.LocalDateTime;
 import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
 import org.service.passwordman.application.port.VaultSessionStore;
+import org.service.passwordman.application.security.SecurityAuditEvent;
 import org.service.passwordman.application.usecase.vault.AutoLockUseCase;
 import org.service.passwordman.domain.exception.ValidationException;
 import org.service.passwordman.domain.exception.VaultLockedException;
 import org.service.passwordman.domain.exception.VaultSessionExpiredException;
+import org.service.passwordman.domain.model.SecurityEventType;
 
 public class AutoLockService implements AutoLockUseCase {
 
@@ -50,7 +52,13 @@ public class AutoLockService implements AutoLockUseCase {
 
         if (inactiveFor.compareTo(timeout) >= 0) {
             vaultSessionStore.lock(userId, jwtTokenId);
-            auditLogger.log(userId, "VAULT_AUTO_LOCKED", ipAddress);
+            auditLogger.log(SecurityAuditEvent.success(
+                    userId,
+                    SecurityEventType.VAULT_AUTO_LOCK,
+                    ipAddress,
+                    jwtTokenId,
+                    "Vault auto-locked because inactivity timeout was reached."
+            ));
             throw new VaultSessionExpiredException();
         }
     }
@@ -73,7 +81,13 @@ public class AutoLockService implements AutoLockUseCase {
 
         if (lastActivityAt == null) {
             vaultSessionStore.lock(userId, jwtTokenId);
-            auditLogger.log(userId, "VAULT_AUTO_LOCKED", ipAddress);
+            auditLogger.log(SecurityAuditEvent.success(
+                    userId,
+                    SecurityEventType.VAULT_AUTO_LOCK,
+                    ipAddress,
+                    jwtTokenId,
+                    "Vault auto-locked because last activity was missing."
+            ));
             return;
         }
 
@@ -81,7 +95,13 @@ public class AutoLockService implements AutoLockUseCase {
 
         if (inactiveFor.compareTo(timeout) >= 0) {
             vaultSessionStore.lock(userId, jwtTokenId);
-            auditLogger.log(userId, "VAULT_AUTO_LOCKED", ipAddress);
+            auditLogger.log(SecurityAuditEvent.success(
+                    userId,
+                    SecurityEventType.VAULT_AUTO_LOCK,
+                    ipAddress,
+                    jwtTokenId,
+                    "Vault auto-locked because inactivity timeout was reached."
+            ));
         }
     }
 

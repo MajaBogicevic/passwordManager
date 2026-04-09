@@ -3,8 +3,8 @@ package org.service.passwordman.domain.model;
 import java.util.Objects;
 
 public class Folder {
-    private int id;
-    private int userId;
+    private final int id;
+    private final int userId;
     private String name;
  
 

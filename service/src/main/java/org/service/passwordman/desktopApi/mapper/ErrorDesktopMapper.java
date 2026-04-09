@@ -4,6 +4,9 @@ import org.service.passwordman.desktopApi.response.ApiErrorResponse;
 import org.service.passwordman.domain.exception.EntryNotFoundException;
 import org.service.passwordman.domain.exception.FolderNotFoundException;
 import org.service.passwordman.domain.exception.InvalidCredentialsException;
+import org.service.passwordman.domain.exception.TokenValidationException;
+import org.service.passwordman.domain.exception.TooManyRequestsException;
+import org.service.passwordman.domain.exception.UnauthorizedException;
 import org.service.passwordman.domain.exception.UnauthorizedVaultAccessException;
 import org.service.passwordman.domain.exception.UserExistsException;
 import org.service.passwordman.domain.exception.ValidationException;
@@ -19,13 +22,19 @@ public class ErrorDesktopMapper {
             return new ApiErrorResponse("USER_EXISTS", ex.getMessage());
         }
         if (ex instanceof InvalidCredentialsException) {
-            return new ApiErrorResponse("INVALID_CREDENTIALS", ex.getMessage());
+            return new ApiErrorResponse("INVALID_CREDENTIALS", "Invalid credentials.");
+        }
+        if (ex instanceof TooManyRequestsException) {
+            return new ApiErrorResponse("RATE_LIMITED", ex.getMessage());
         }
         if (ex instanceof VaultSessionExpiredException) {
-            return new ApiErrorResponse("VAULT_LOCKED", ex.getMessage());
+            return new ApiErrorResponse("VAULT_LOCKED", "Vault is locked or session has expired.");
         }
-        if (ex instanceof UnauthorizedVaultAccessException) {
-            return new ApiErrorResponse("UNAUTHORIZED", ex.getMessage());
+        if (ex instanceof UnauthorizedVaultAccessException || ex instanceof UnauthorizedException) {
+            return new ApiErrorResponse("UNAUTHORIZED", "You are not authorized to perform this action.");
+        }
+        if (ex instanceof TokenValidationException) {
+            return new ApiErrorResponse("INVALID_TOKEN", "Token is invalid or expired.");
         }
         if (ex instanceof FolderNotFoundException) {
             return new ApiErrorResponse("FOLDER_NOT_FOUND", ex.getMessage());
@@ -34,9 +43,9 @@ public class ErrorDesktopMapper {
             return new ApiErrorResponse("ENTRY_NOT_FOUND", ex.getMessage());
         }
         if (ex instanceof IllegalStateException) {
-            return new ApiErrorResponse("ILLEGAL_STATE", ex.getMessage());
+            return new ApiErrorResponse("ILLEGAL_STATE", "Operation cannot be completed in the current state.");
         }
 
-        return new ApiErrorResponse("INTERNAL_ERROR", ex.getMessage() != null ? ex.getMessage() : "Unexpected error.");
+        return new ApiErrorResponse("INTERNAL_ERROR", "An unexpected error occurred.");
     }
 }

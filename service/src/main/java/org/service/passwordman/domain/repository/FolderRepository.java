@@ -1,8 +1,9 @@
 package org.service.passwordman.domain.repository;
 
-import org.service.passwordman.domain.model.Folder;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
+
+import org.service.passwordman.domain.model.Folder;
 
 public interface FolderRepository {
     Optional<Folder> findById(int folderId);
@@ -10,4 +11,6 @@ public interface FolderRepository {
     List<Folder> findByUserId(int userId);
     void save(Folder folder);
     void deleteById(int folderId);
+
+    boolean deleteByIdAndUserId(int folderId, int userId);
 }

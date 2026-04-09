@@ -25,7 +25,7 @@ public class RenameFolderService implements RenameFolderUseCase {
     }
 
     @Override
-    public void execute(int userId, int folderId, String newName) {
+    public void execute(int userId, int folderId, String newName, String ipAddress) {
         userRepository.findById(userId)
                 .orElseThrow(UnauthorizedVaultAccessException::new);
 
@@ -43,6 +43,6 @@ public class RenameFolderService implements RenameFolderUseCase {
         );
 
         folderRepository.save(renamedFolder);
-        auditLogger.log(userId, "FOLDER_RENAMED", newName);
+        auditLogger.log(userId, "FOLDER_RENAMED", ipAddress);
     }
 }

@@ -2,8 +2,10 @@ package org.service.passwordman.application.service.vault;
 
 import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.VaultSessionStore;
+import org.service.passwordman.application.security.SecurityAuditEvent;
 import org.service.passwordman.application.usecase.vault.LockVaultUseCase;
 import org.service.passwordman.domain.exception.ValidationException;
+import org.service.passwordman.domain.model.SecurityEventType;
 
 public class LockVaultService implements LockVaultUseCase {
 
@@ -29,6 +31,13 @@ public class LockVaultService implements LockVaultUseCase {
         }
 
         vaultSessionStore.lock(userId, jwtTokenId);
-        auditLogger.log(userId, "VAULT_LOCKED", ipAddress);
+
+        auditLogger.log(SecurityAuditEvent.success(
+                userId,
+                SecurityEventType.VAULT_LOCK,
+                ipAddress,
+                jwtTokenId,
+                "Vault locked by user action."
+        ));
     }
 }
