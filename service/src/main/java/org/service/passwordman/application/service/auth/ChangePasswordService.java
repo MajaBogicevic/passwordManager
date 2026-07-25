@@ -1,37 +1,45 @@
 package org.service.passwordman.application.service.auth;
 
 import java.time.ZoneId;
+import java.util.Arrays;
 
+import org.crypt.crypto.kdf.DataKeyWrapper;
+import org.crypt.crypto.kdf.Pbkdf2KeyDerivation;
+import org.crypt.crypto.util.Base64Url;
+import org.crypt.crypto.util.ZeroUtils;
 import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
 import org.service.passwordman.application.port.PasswordHasher;
 import org.service.passwordman.application.port.RefreshTokenStore;
 import org.service.passwordman.application.port.UserAuthInvalidationStore;
+import org.service.passwordman.application.port.VaultKeyStore;
 import org.service.passwordman.application.port.VaultSessionStore;
 import org.service.passwordman.application.security.SecurityAuditEvent;
-import org.service.passwordman.application.usecase.auth.ChangeMasterPasswordUseCase;
+import org.service.passwordman.application.usecase.auth.ChangePasswordUseCase;
 import org.service.passwordman.domain.exception.InvalidCredentialsException;
 import org.service.passwordman.domain.exception.UserNotFoundException;
 import org.service.passwordman.domain.exception.ValidationException;
-import org.service.passwordman.domain.exception.VaultSessionExpiredException;
 import org.service.passwordman.domain.model.SecurityEventType;
 import org.service.passwordman.domain.model.User;
 import org.service.passwordman.domain.repository.UserRepository;
 
-public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase {
+
+public class ChangePasswordService implements ChangePasswordUseCase {
 
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
     private final VaultSessionStore vaultSessionStore;
+    private final VaultKeyStore vaultKeyStore;
     private final AuditLogger auditLogger;
     private final Clock clock;
     private final RefreshTokenStore refreshTokenStore;
     private final UserAuthInvalidationStore userAuthInvalidationStore;
 
-    public ChangeMasterPasswordService(
+    public ChangePasswordService(
             UserRepository userRepository,
             PasswordHasher passwordHasher,
             VaultSessionStore vaultSessionStore,
+            VaultKeyStore vaultKeyStore,
             AuditLogger auditLogger,
             Clock clock,
             RefreshTokenStore refreshTokenStore,
@@ -40,6 +48,7 @@ public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase 
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.vaultSessionStore = vaultSessionStore;
+        this.vaultKeyStore = vaultKeyStore;
         this.auditLogger = auditLogger;
         this.clock = clock;
         this.refreshTokenStore = refreshTokenStore;
@@ -47,50 +56,71 @@ public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase 
     }
 
     @Override
-    public void execute(int userId, String jwtTokenId, String oldMasterPassword, String newMasterPassword, String ipAddress) {
+    public void execute(int userId, String jwtTokenId, String oldPassword, String newPassword, String ipAddress) {
         if (userId <= 0) {
             throw new ValidationException("User id must be greater than 0.");
         }
 
-        if (oldMasterPassword == null || oldMasterPassword.trim().isEmpty()) {
-            throw new ValidationException("Old master password is required.");
+        if (oldPassword == null || oldPassword.trim().isEmpty()) {
+            throw new ValidationException("Old password is required.");
         }
 
-        if (newMasterPassword == null || newMasterPassword.trim().isEmpty()) {
-            throw new ValidationException("New master password is required.");
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new ValidationException("New password is required.");
         }
 
-        if (oldMasterPassword.equals(newMasterPassword)) {
-            throw new ValidationException("New master password must be different from the old master password.");
-        }
-
-        if (!vaultSessionStore.isUnlocked(userId, jwtTokenId)) {
-            throw new VaultSessionExpiredException();
+        if (oldPassword.equals(newPassword)) {
+            throw new ValidationException("New password must be different from the old password.");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        if (!passwordHasher.matches(oldMasterPassword, user.getMasterPasswordHash())) {
+        if (!passwordHasher.matches(oldPassword, user.getPasswordHash())) {
             auditLogger.log(SecurityAuditEvent.failure(
                     userId,
-                    SecurityEventType.MASTER_PASSWORD_CHANGED,
-                    "INVALID_OLD_MASTER_PASSWORD",
+                    SecurityEventType.PASSWORD_CHANGED,
+                    "INVALID_OLD_PASSWORD",
                     ipAddress,
-                    null,
-                    "Master password change failed because old password did not match."
+                    jwtTokenId,
+                    "Password change failed because old password did not match."
             ));
             throw new InvalidCredentialsException();
         }
 
-        String newHash = passwordHasher.hash(newMasterPassword);
+        char[] oldPasswordChars = oldPassword.toCharArray();
+        char[] newPasswordChars = newPassword.toCharArray();
+        byte[] oldSalt = Base64Url.decode(user.getKeySalt());
+        byte[] oldKek = null;
+        byte[] dataEncryptionKey = null;
+        byte[] newKek = null;
+        String newWrappedDataKey;
+        byte[] newSalt;
+
+        try {
+            oldKek = Pbkdf2KeyDerivation.deriveKey(oldPasswordChars, oldSalt);
+            dataEncryptionKey = DataKeyWrapper.unwrap(user.getWrappedDataKey(), oldKek);
+
+            newSalt = Pbkdf2KeyDerivation.generateSalt();
+            newKek = Pbkdf2KeyDerivation.deriveKey(newPasswordChars, newSalt);
+            newWrappedDataKey = DataKeyWrapper.wrap(dataEncryptionKey, newKek);
+        } finally {
+            Arrays.fill(oldPasswordChars, '\0');
+            Arrays.fill(newPasswordChars, '\0');
+            ZeroUtils.zero(oldKek);
+            ZeroUtils.zero(newKek);
+            ZeroUtils.zero(dataEncryptionKey);
+        }
+
+        String newPasswordHash = passwordHasher.hash(newPassword);
 
         User updatedUser = new User(
                 user.getId(),
                 user.getEmail(),
                 user.getUsername(),
-                user.getLoginPasswordHash(),
-                newHash,
+                newPasswordHash,
+                Base64Url.encode(newSalt),
+                newWrappedDataKey,
                 user.getNotes(),
                 user.getCreatedAt(),
                 clock.now()
@@ -99,6 +129,7 @@ public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase 
         userRepository.save(updatedUser);
 
         vaultSessionStore.lockAllForUser(userId);
+        vaultKeyStore.clearAllForUser(userId);
         refreshTokenStore.revokeAllByUserId(userId);
 
         long cutoffMillis = clock.now()
@@ -110,10 +141,10 @@ public class ChangeMasterPasswordService implements ChangeMasterPasswordUseCase 
 
         auditLogger.log(SecurityAuditEvent.success(
                 userId,
-                SecurityEventType.MASTER_PASSWORD_CHANGED,
+                SecurityEventType.PASSWORD_CHANGED,
                 ipAddress,
-                null,
-                "Master password changed successfully. Sessions invalidated and vault locked."
+                jwtTokenId,
+                "Password changed successfully. Sessions invalidated and vault locked."
         ));
     }
 }

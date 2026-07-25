@@ -1,12 +1,12 @@
 package org.service.passwordman.infrastructure.persistence.repository;
 
-import org.service.passwordman.domain.model.User;
-import org.service.passwordman.domain.repository.UserRepository;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.service.passwordman.domain.model.User;
+import org.service.passwordman.domain.repository.UserRepository;
 
 public class InMemoryUserRepository implements UserRepository {
 
@@ -43,8 +43,9 @@ public class InMemoryUserRepository implements UserRepository {
                     newId,
                     user.getEmail(),
                     user.getUsername(),
-                    user.getLoginPasswordHash(),
-                    user.getMasterPasswordHash(),
+                    user.getPasswordHash(),
+                    user.getKeySalt(),
+                    user.getWrappedDataKey(),
                     user.getNotes(),
                     user.getCreatedAt(),
                     user.getUpdatedAt()

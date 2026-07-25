@@ -1,6 +1,7 @@
 package org.service.passwordman.application.service.vault;
 
 import org.service.passwordman.application.port.AuditLogger;
+import org.service.passwordman.application.port.VaultKeyStore;
 import org.service.passwordman.application.port.VaultSessionStore;
 import org.service.passwordman.application.security.SecurityAuditEvent;
 import org.service.passwordman.application.usecase.vault.LockVaultUseCase;
@@ -10,13 +11,16 @@ import org.service.passwordman.domain.model.SecurityEventType;
 public class LockVaultService implements LockVaultUseCase {
 
     private final VaultSessionStore vaultSessionStore;
+    private final VaultKeyStore vaultKeyStore;
     private final AuditLogger auditLogger;
 
     public LockVaultService(
             VaultSessionStore vaultSessionStore,
+            VaultKeyStore vaultKeyStore,
             AuditLogger auditLogger
     ) {
         this.vaultSessionStore = vaultSessionStore;
+        this.vaultKeyStore = vaultKeyStore;
         this.auditLogger = auditLogger;
     }
 
@@ -31,6 +35,7 @@ public class LockVaultService implements LockVaultUseCase {
         }
 
         vaultSessionStore.lock(userId, jwtTokenId);
+        vaultKeyStore.clear(userId, jwtTokenId);
 
         auditLogger.log(SecurityAuditEvent.success(
                 userId,

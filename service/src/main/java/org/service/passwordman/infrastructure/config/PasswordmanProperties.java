@@ -1,16 +1,12 @@
 package org.service.passwordman.infrastructure.config;
 
-import org.crypt.crypto.util.Base64Url;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "passwordman")
 public class PasswordmanProperties {
 
     private static final int MIN_JWT_SECRET_LENGTH = 32;
-    private static final int AES_256_KEY_LENGTH_BYTES = 32;
 
-    private String encryptionKeyRef;
-    private String encryptionMasterKeyBase64;
     private String jwtSecret;
     private long jwtExpirationMillis;
     private long jwtAccessExpirationMillis;
@@ -29,7 +25,6 @@ public class PasswordmanProperties {
 
     public void validate() {
         validateJwtSecret();
-        validateEncryptionConfiguration();
 
         if (jwtExpirationMillis < 0) {
             throw new IllegalStateException("passwordman.jwt-expiration-millis must not be negative.");
@@ -64,34 +59,6 @@ public class PasswordmanProperties {
         }
     }
 
-    private void validateEncryptionConfiguration() {
-        if (encryptionKeyRef == null || encryptionKeyRef.isBlank()) {
-            throw new IllegalStateException("passwordman.encryption-key-ref must be configured.");
-        }
-
-        if (encryptionKeyRef.contains(".")) {
-            throw new IllegalStateException("passwordman.encryption-key-ref must not contain '.'.");
-        }
-
-        if (encryptionMasterKeyBase64 == null || encryptionMasterKeyBase64.isBlank()) {
-            throw new IllegalStateException("passwordman.encryption-master-key-base64 must be configured.");
-        }
-
-        byte[] decodedKey;
-        try {
-            decodedKey = Base64Url.decode(encryptionMasterKeyBase64);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalStateException("passwordman.encryption-master-key-base64 is not valid Base64Url.", ex);
-        }
-
-        if (decodedKey.length != AES_256_KEY_LENGTH_BYTES) {
-            throw new IllegalStateException(
-                    "passwordman.encryption-master-key-base64 must decode to exactly "
-                            + AES_256_KEY_LENGTH_BYTES + " bytes."
-            );
-        }
-    }
-
     private void validateRateLimit(int maxAttempts, long blockDurationMillis, String label) {
         if (maxAttempts <= 0) {
             throw new IllegalStateException(label + " rate limit max attempts must be greater than 0.");
@@ -100,22 +67,6 @@ public class PasswordmanProperties {
         if (blockDurationMillis <= 0) {
             throw new IllegalStateException(label + " rate limit block duration must be greater than 0.");
         }
-    }
-
-    public String getEncryptionKeyRef() {
-        return encryptionKeyRef;
-    }
-
-    public void setEncryptionKeyRef(String encryptionKeyRef) {
-        this.encryptionKeyRef = encryptionKeyRef;
-    }
-
-    public String getEncryptionMasterKeyBase64() {
-        return encryptionMasterKeyBase64;
-    }
-
-    public void setEncryptionMasterKeyBase64(String encryptionMasterKeyBase64) {
-        this.encryptionMasterKeyBase64 = encryptionMasterKeyBase64;
     }
 
     public String getJwtSecret() {

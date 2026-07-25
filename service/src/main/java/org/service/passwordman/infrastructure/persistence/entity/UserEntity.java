@@ -23,11 +23,14 @@ public class UserEntity {
     @Column(nullable = false, length = 100, unique = true)
     private String username;
 
-    @Column(name = "login_password_hash", nullable = false, length = 255)
-    private String loginPasswordHash;
+    @Column(name = "password_hash", nullable = false, length = 255)
+    private String passwordHash;
 
-    @Column(name = "master_password_hash", nullable = false, length = 255)
-    private String masterPasswordHash;
+    @Column(name = "key_salt", nullable = false, length = 255)
+    private String keySalt;
+
+    @Column(name = "wrapped_data_key", nullable = false, columnDefinition = "TEXT")
+    private String wrappedDataKey;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
@@ -65,20 +68,28 @@ public class UserEntity {
         this.username = username;
     }
 
-    public String getLoginPasswordHash() {
-        return loginPasswordHash;
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setLoginPasswordHash(String loginPasswordHash) {
-        this.loginPasswordHash = loginPasswordHash;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
-    public String getMasterPasswordHash() {
-        return masterPasswordHash;
+    public String getKeySalt() {
+        return keySalt;
     }
 
-    public void setMasterPasswordHash(String masterPasswordHash) {
-        this.masterPasswordHash = masterPasswordHash;
+    public void setKeySalt(String keySalt) {
+        this.keySalt = keySalt;
+    }
+
+    public String getWrappedDataKey() {
+        return wrappedDataKey;
+    }
+
+    public void setWrappedDataKey(String wrappedDataKey) {
+        this.wrappedDataKey = wrappedDataKey;
     }
 
     public String getNotes() {

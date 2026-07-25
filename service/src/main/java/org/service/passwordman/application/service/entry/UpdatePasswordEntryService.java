@@ -3,11 +3,13 @@ package org.service.passwordman.application.service.entry;
 import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
 import org.service.passwordman.application.port.EncryptionService;
+import org.service.passwordman.application.port.VaultKeyStore;
 import org.service.passwordman.application.port.VaultSessionStore;
 import org.service.passwordman.application.usecase.entry.UpdatePasswordEntryUseCase;
 import org.service.passwordman.domain.exception.EntryNotFoundException;
 import org.service.passwordman.domain.exception.FolderNotFoundException;
 import org.service.passwordman.domain.exception.UnauthorizedVaultAccessException;
+import org.service.passwordman.domain.exception.VaultLockedException;
 import org.service.passwordman.domain.exception.VaultSessionExpiredException;
 import org.service.passwordman.domain.model.PasswordEntry;
 import org.service.passwordman.domain.repository.FolderRepository;
@@ -19,6 +21,7 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
     private final PasswordEntryRepository passwordEntryRepository;
     private final UserRepository userRepository;
     private final VaultSessionStore vaultSessionStore;
+    private final VaultKeyStore vaultKeyStore;
     private final EncryptionService encryptionService;
     private final Clock clock;
     private final AuditLogger auditLogger;
@@ -28,6 +31,7 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
             PasswordEntryRepository passwordEntryRepository,
             UserRepository userRepository,
             VaultSessionStore vaultSessionStore,
+            VaultKeyStore vaultKeyStore,
             EncryptionService encryptionService,
             Clock clock,
             AuditLogger auditLogger,
@@ -36,6 +40,7 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
         this.passwordEntryRepository = passwordEntryRepository;
         this.userRepository = userRepository;
         this.vaultSessionStore = vaultSessionStore;
+        this.vaultKeyStore = vaultKeyStore;
         this.encryptionService = encryptionService;
         this.clock = clock;
         this.auditLogger = auditLogger;
@@ -62,6 +67,9 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
             throw new VaultSessionExpiredException();
         }
 
+        byte[] dataEncryptionKey = vaultKeyStore.get(userId, jwtTokenId)
+                .orElseThrow(VaultLockedException::new);
+
         PasswordEntry entry = passwordEntryRepository.findByIdAndUserId(entryId, userId)
                 .orElseThrow(() -> new EntryNotFoundException(String.valueOf(entryId)));
 
@@ -70,14 +78,16 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
                     .orElseThrow(() -> new FolderNotFoundException(String.valueOf(folderId)));
         }
 
-        String encryptedPassword = encryptionService.encrypt(plainPassword);
+        String encryptedPassword = encryptionService.encrypt(dataEncryptionKey, plainPassword);
+        String encryptedUsername = encryptionService.encrypt(dataEncryptionKey, username);
+        String encryptedNotes = notes == null ? null : encryptionService.encrypt(dataEncryptionKey, notes);
 
         entry.update(
                 title,
                 url,
-                username,
+                encryptedUsername,
                 encryptedPassword,
-                notes,
+                encryptedNotes,
                 folderId,
                 clock.now()
         );

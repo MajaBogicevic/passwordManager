@@ -2,7 +2,7 @@ package org.service.passwordman.application.port;
 
 public interface EncryptionService {
 
-    String encrypt(String data);
+    String encrypt(byte[] dataEncryptionKey, String plaintext);
 
-    String decrypt(String encryptedData);
+    String decrypt(byte[] dataEncryptionKey, String encryptedData);
 }

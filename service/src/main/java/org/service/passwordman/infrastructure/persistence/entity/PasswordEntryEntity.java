@@ -26,7 +26,7 @@ public class PasswordEntryEntity {
     @Column(length = 1000)
     private String url;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String username;
 
     @Column(name = "encrypted_password", nullable = false, columnDefinition = "TEXT")

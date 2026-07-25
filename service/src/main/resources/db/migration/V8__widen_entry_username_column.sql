@@ -1,0 +1,1 @@
+ALTER TABLE password_entries ALTER COLUMN username TYPE TEXT;

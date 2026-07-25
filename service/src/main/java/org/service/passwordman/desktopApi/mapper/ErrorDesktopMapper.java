@@ -10,6 +10,7 @@ import org.service.passwordman.domain.exception.UnauthorizedException;
 import org.service.passwordman.domain.exception.UnauthorizedVaultAccessException;
 import org.service.passwordman.domain.exception.UserExistsException;
 import org.service.passwordman.domain.exception.ValidationException;
+import org.service.passwordman.domain.exception.VaultLockedException;
 import org.service.passwordman.domain.exception.VaultSessionExpiredException;
 
 public class ErrorDesktopMapper {
@@ -26,6 +27,9 @@ public class ErrorDesktopMapper {
         }
         if (ex instanceof TooManyRequestsException) {
             return new ApiErrorResponse("RATE_LIMITED", ex.getMessage());
+        }
+        if (ex instanceof VaultLockedException) {
+            return new ApiErrorResponse("VAULT_LOCKED", "Vault is locked. Unlock it before accessing this resource.");
         }
         if (ex instanceof VaultSessionExpiredException) {
             return new ApiErrorResponse("VAULT_LOCKED", "Vault is locked or session has expired.");

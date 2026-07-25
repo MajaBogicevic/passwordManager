@@ -1,7 +1,6 @@
 package org.service.passwordman.desktopApi.controller;
 
-import org.service.passwordman.desktopApi.request.ChangeLoginPasswordRequest;
-import org.service.passwordman.desktopApi.request.ChangeMasterPasswordRequest;
+import org.service.passwordman.desktopApi.request.ChangePasswordRequest;
 import org.service.passwordman.desktopApi.request.CreateFolderRequest;
 import org.service.passwordman.desktopApi.request.CreatePasswordEntryRequest;
 import org.service.passwordman.desktopApi.request.LoginRequest;
@@ -50,20 +49,12 @@ public class DesktopApiRestController {
         return desktopApiController.auth().login(request, httpRequest);
     }
 
-    @PostMapping("/auth/change-master-password")
-    public Object changeMasterPassword(
-            @RequestBody ChangeMasterPasswordRequest request,
+    @PostMapping("/auth/change-password")
+    public Object changePassword(
+            @RequestBody ChangePasswordRequest request,
             HttpServletRequest httpRequest
     ) {
-        return desktopApiController.auth().changeMasterPassword(request, httpRequest);
-    }
-
-    @PostMapping("/auth/change-login-password")
-    public Object changeLoginPassword(
-            @RequestBody ChangeLoginPasswordRequest request,
-            HttpServletRequest httpRequest
-    ) {
-        return desktopApiController.auth().changeLoginPassword(request, httpRequest);
+        return desktopApiController.auth().changePassword(request, httpRequest);
     }
 
     @PostMapping("/auth/logout")

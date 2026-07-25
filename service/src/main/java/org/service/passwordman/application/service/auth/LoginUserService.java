@@ -38,7 +38,7 @@ public class LoginUserService implements LoginUserUseCase {
     }
 
     @Override
-    public TokenPayload execute(String username, String loginPassword, String ip) {
+    public TokenPayload execute(String username, String password, String ip) {
         String rateLimitKey = buildRateLimitKey(username, ip);
 
         if (rateLimitStore.isBlocked(rateLimitKey)) {
@@ -67,7 +67,7 @@ public class LoginUserService implements LoginUserUseCase {
             throw new InvalidCredentialsException();
         }
 
-        boolean matches = passwordHasher.matches(loginPassword, user.getLoginPasswordHash());
+        boolean matches = passwordHasher.matches(password, user.getPasswordHash());
 
         if (!matches) {
             rateLimitStore.recordFailure(rateLimitKey, maxAttempts, blockDurationMillis);

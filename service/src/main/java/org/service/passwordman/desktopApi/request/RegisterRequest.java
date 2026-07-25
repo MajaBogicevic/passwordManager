@@ -3,8 +3,7 @@ package org.service.passwordman.desktopApi.request;
 public class RegisterRequest {
     private String email;
     private String username;
-    private String loginPassword;
-    private String masterPassword;
+    private String password;
     private String notes;
 
     public RegisterRequest() {
@@ -13,14 +12,12 @@ public class RegisterRequest {
     public RegisterRequest(
             String email,
             String username,
-            String loginPassword,
-            String masterPassword,
+            String password,
             String notes
     ) {
         this.email = email;
         this.username = username;
-        this.loginPassword = loginPassword;
-        this.masterPassword = masterPassword;
+        this.password = password;
         this.notes = notes;
     }
 
@@ -32,16 +29,11 @@ public class RegisterRequest {
         return username;
     }
 
-    public String getLoginPassword() {
-        return loginPassword;
-    }
-
-    public String getMasterPassword() {
-        return masterPassword;
+    public String getPassword() {
+        return password;
     }
 
     public String getNotes() {
         return notes;
     }
-
 }

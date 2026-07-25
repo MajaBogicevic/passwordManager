@@ -1,8 +1,8 @@
 package org.service.passwordman.desktopApi.handler;
 
-import org.service.passwordman.desktopApi.mapper.ErrorDesktopMapper;
-
 import java.util.function.Supplier;
+
+import org.service.passwordman.desktopApi.mapper.ErrorDesktopMapper;
 
 public class ApiHandler {
 

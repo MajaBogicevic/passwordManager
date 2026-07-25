@@ -40,8 +40,9 @@ public class JpaUserRepositoryAdapter implements UserRepository {
                 entity.getId(),
                 entity.getEmail(),
                 entity.getUsername(),
-                entity.getLoginPasswordHash(),
-                entity.getMasterPasswordHash(),
+                entity.getPasswordHash(),
+                entity.getKeySalt(),
+                entity.getWrappedDataKey(),
                 entity.getNotes(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
@@ -55,8 +56,9 @@ public class JpaUserRepositoryAdapter implements UserRepository {
         }
         entity.setEmail(user.getEmail());
         entity.setUsername(user.getUsername());
-        entity.setLoginPasswordHash(user.getLoginPasswordHash());
-        entity.setMasterPasswordHash(user.getMasterPasswordHash());
+        entity.setPasswordHash(user.getPasswordHash());
+        entity.setKeySalt(user.getKeySalt());
+        entity.setWrappedDataKey(user.getWrappedDataKey());
         entity.setNotes(user.getNotes());
         entity.setCreatedAt(user.getCreatedAt());
         entity.setUpdatedAt(user.getUpdatedAt());

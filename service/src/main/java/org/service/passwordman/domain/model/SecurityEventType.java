@@ -6,8 +6,7 @@ public enum SecurityEventType {
     LOGIN(true),
     REFRESH_TOKEN(true),
     LOGOUT(true),
-    LOGIN_PASSWORD_CHANGED(true),
-    MASTER_PASSWORD_CHANGED(true),
+    PASSWORD_CHANGED(true),
     VAULT_UNLOCK(true),
     VAULT_LOCK(true),
     VAULT_AUTO_LOCK(true);

@@ -2,22 +2,21 @@ package org.service.passwordman.desktopApi.request;
 
 public class LoginRequest {
     private String username;
-    private String loginPassword;
+    private String password;
 
     public LoginRequest() {
     }
 
-    public LoginRequest(String username, String loginPassword, String ipAddress) {
+    public LoginRequest(String username, String password) {
         this.username = username;
-        this.loginPassword = loginPassword;
+        this.password = password;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public String getLoginPassword() {
-        return loginPassword;
+    public String getPassword() {
+        return password;
     }
-
 }

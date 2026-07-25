@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import org.service.passwordman.application.port.AuditLogger;
 import org.service.passwordman.application.port.Clock;
+import org.service.passwordman.application.port.VaultKeyStore;
 import org.service.passwordman.application.port.VaultSessionStore;
 import org.service.passwordman.application.security.SecurityAuditEvent;
 import org.service.passwordman.application.usecase.vault.AutoLockUseCase;
@@ -16,17 +17,20 @@ import org.service.passwordman.domain.model.SecurityEventType;
 public class AutoLockService implements AutoLockUseCase {
 
     private final VaultSessionStore vaultSessionStore;
+    private final VaultKeyStore vaultKeyStore;
     private final Clock clock;
     private final AuditLogger auditLogger;
     private final Duration timeout;
 
     public AutoLockService(
             VaultSessionStore vaultSessionStore,
+            VaultKeyStore vaultKeyStore,
             Clock clock,
             AuditLogger auditLogger,
             Duration timeout
     ) {
         this.vaultSessionStore = vaultSessionStore;
+        this.vaultKeyStore = vaultKeyStore;
         this.clock = clock;
         this.auditLogger = auditLogger;
         this.timeout = timeout;
@@ -52,6 +56,7 @@ public class AutoLockService implements AutoLockUseCase {
 
         if (inactiveFor.compareTo(timeout) >= 0) {
             vaultSessionStore.lock(userId, jwtTokenId);
+            vaultKeyStore.clear(userId, jwtTokenId);
             auditLogger.log(SecurityAuditEvent.success(
                     userId,
                     SecurityEventType.VAULT_AUTO_LOCK,
@@ -81,6 +86,7 @@ public class AutoLockService implements AutoLockUseCase {
 
         if (lastActivityAt == null) {
             vaultSessionStore.lock(userId, jwtTokenId);
+            vaultKeyStore.clear(userId, jwtTokenId);
             auditLogger.log(SecurityAuditEvent.success(
                     userId,
                     SecurityEventType.VAULT_AUTO_LOCK,
@@ -95,6 +101,7 @@ public class AutoLockService implements AutoLockUseCase {
 
         if (inactiveFor.compareTo(timeout) >= 0) {
             vaultSessionStore.lock(userId, jwtTokenId);
+            vaultKeyStore.clear(userId, jwtTokenId);
             auditLogger.log(SecurityAuditEvent.success(
                     userId,
                     SecurityEventType.VAULT_AUTO_LOCK,

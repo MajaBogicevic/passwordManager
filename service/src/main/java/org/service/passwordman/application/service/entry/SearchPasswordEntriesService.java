@@ -2,9 +2,12 @@ package org.service.passwordman.application.service.entry;
 
 import java.util.List;
 
+import org.service.passwordman.application.port.EncryptionService;
+import org.service.passwordman.application.port.VaultKeyStore;
 import org.service.passwordman.application.usecase.entry.SearchPasswordEntriesUseCase;
 import org.service.passwordman.application.usecase.vault.AutoLockUseCase;
 import org.service.passwordman.domain.exception.ValidationException;
+import org.service.passwordman.domain.exception.VaultLockedException;
 import org.service.passwordman.domain.model.PasswordEntry;
 import org.service.passwordman.domain.repository.PasswordEntryRepository;
 
@@ -12,13 +15,19 @@ public class SearchPasswordEntriesService implements SearchPasswordEntriesUseCas
 
     private final PasswordEntryRepository passwordEntryRepository;
     private final AutoLockUseCase autoLockUseCase;
+    private final VaultKeyStore vaultKeyStore;
+    private final EncryptionService encryptionService;
 
     public SearchPasswordEntriesService(
             PasswordEntryRepository passwordEntryRepository,
-            AutoLockUseCase autoLockUseCase
+            AutoLockUseCase autoLockUseCase,
+            VaultKeyStore vaultKeyStore,
+            EncryptionService encryptionService
     ) {
         this.passwordEntryRepository = passwordEntryRepository;
         this.autoLockUseCase = autoLockUseCase;
+        this.vaultKeyStore = vaultKeyStore;
+        this.encryptionService = encryptionService;
     }
 
     @Override
@@ -32,8 +41,13 @@ public class SearchPasswordEntriesService implements SearchPasswordEntriesUseCas
         }
 
         autoLockUseCase.ensureVaultIsActive(userId, jwtTokenId, null);
+
+        byte[] dataEncryptionKey = vaultKeyStore.get(userId, jwtTokenId)
+                .orElseThrow(VaultLockedException::new);
+
         autoLockUseCase.refreshActivity(userId, jwtTokenId);
 
-        return passwordEntryRepository.searchByUserIdAndTitle(userId, titleQuery);
+        List<PasswordEntry> entries = passwordEntryRepository.searchByUserIdAndTitle(userId, titleQuery);
+        return PasswordEntryDecryptor.decryptMetadata(entries, dataEncryptionKey, encryptionService);
     }
 }

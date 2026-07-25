@@ -2,8 +2,7 @@ package org.service.passwordman.desktopApi.validation;
 
 import java.util.regex.Pattern;
 
-import org.service.passwordman.desktopApi.request.ChangeLoginPasswordRequest;
-import org.service.passwordman.desktopApi.request.ChangeMasterPasswordRequest;
+import org.service.passwordman.desktopApi.request.ChangePasswordRequest;
 import org.service.passwordman.desktopApi.request.LoginRequest;
 import org.service.passwordman.desktopApi.request.RefreshTokenRequest;
 import org.service.passwordman.desktopApi.request.RegisterRequest;
@@ -27,13 +26,11 @@ public class AuthRequestValidator {
 
         requireNotBlank(request.getEmail(), "Email is required.");
         requireNotBlank(request.getUsername(), "Username is required.");
-        requireNotBlank(request.getLoginPassword(), "Login password is required.");
-        requireNotBlank(request.getMasterPassword(), "Master password is required.");
+        requireNotBlank(request.getPassword(), "Password is required.");
 
         requireMaxLength(request.getEmail(), MAX_EMAIL_LENGTH, "Email is too long.");
         requireMaxLength(request.getUsername(), MAX_USERNAME_LENGTH, "Username is too long.");
-        requireMaxLength(request.getLoginPassword(), MAX_PASSWORD_LENGTH, "Login password is too long.");
-        requireMaxLength(request.getMasterPassword(), MAX_PASSWORD_LENGTH, "Master password is too long.");
+        requireMaxLength(request.getPassword(), MAX_PASSWORD_LENGTH, "Password is too long.");
         requireMaxLength(request.getNotes(), MAX_NOTES_LENGTH, "Notes are too long.");
 
         if (!SIMPLE_EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
@@ -47,10 +44,10 @@ public class AuthRequestValidator {
         }
 
         requireNotBlank(request.getUsername(), "Username is required.");
-        requireNotBlank(request.getLoginPassword(), "Login password is required.");
+        requireNotBlank(request.getPassword(), "Password is required.");
 
         requireMaxLength(request.getUsername(), MAX_USERNAME_LENGTH, "Username is too long.");
-        requireMaxLength(request.getLoginPassword(), MAX_PASSWORD_LENGTH, "Login password is too long.");
+        requireMaxLength(request.getPassword(), MAX_PASSWORD_LENGTH, "Password is too long.");
     }
 
     public void validateUnlock(UnlockVaultRequest request) {
@@ -62,28 +59,16 @@ public class AuthRequestValidator {
         requireMaxLength(request.getMasterPassword(), MAX_PASSWORD_LENGTH, "Master password is too long.");
     }
 
-    public void validateChangeMasterPassword(ChangeMasterPasswordRequest request) {
+    public void validateChangePassword(ChangePasswordRequest request) {
         if (request == null) {
-            throw new ValidationException("Change master password request must not be null.");
+            throw new ValidationException("Change password request must not be null.");
         }
 
-        requireNotBlank(request.getOldMasterPassword(), "Old master password is required.");
-        requireNotBlank(request.getNewMasterPassword(), "New master password is required.");
+        requireNotBlank(request.getOldPassword(), "Old password is required.");
+        requireNotBlank(request.getNewPassword(), "New password is required.");
 
-        requireMaxLength(request.getOldMasterPassword(), MAX_PASSWORD_LENGTH, "Old master password is too long.");
-        requireMaxLength(request.getNewMasterPassword(), MAX_PASSWORD_LENGTH, "New master password is too long.");
-    }
-
-    public void validateChangeLoginPassword(ChangeLoginPasswordRequest request) {
-        if (request == null) {
-            throw new ValidationException("Change login password request must not be null.");
-        }
-
-        requireNotBlank(request.getOldLoginPassword(), "Old login password is required.");
-        requireNotBlank(request.getNewLoginPassword(), "New login password is required.");
-
-        requireMaxLength(request.getOldLoginPassword(), MAX_PASSWORD_LENGTH, "Old login password is too long.");
-        requireMaxLength(request.getNewLoginPassword(), MAX_PASSWORD_LENGTH, "New login password is too long.");
+        requireMaxLength(request.getOldPassword(), MAX_PASSWORD_LENGTH, "Old password is too long.");
+        requireMaxLength(request.getNewPassword(), MAX_PASSWORD_LENGTH, "New password is too long.");
     }
 
     public void validateLogout() {
