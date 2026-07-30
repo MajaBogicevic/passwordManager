@@ -69,4 +69,8 @@ public class PasswordEntryController {
     public Object search(SearchPasswordEntriesRequest request) {
         return passwordEntryHandler.searchSafe(request);
     }
+
+    public Object logPasswordCopy(int entryId, HttpServletRequest httpRequest) {
+        return passwordEntryHandler.logPasswordCopySafe(entryId, clientIp.resolve(httpRequest));
+    }
 }

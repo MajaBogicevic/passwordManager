@@ -32,8 +32,9 @@ public class JpaFolderRepositoryAdapter implements FolderRepository {
     }
 
     @Override
-    public void save(Folder folder) {
-        repository.save(toEntity(folder));
+    public Folder save(Folder folder) {
+        FolderEntity savedEntity = repository.save(toEntity(folder));
+        return toDomain(savedEntity);
     }
 
     @Override

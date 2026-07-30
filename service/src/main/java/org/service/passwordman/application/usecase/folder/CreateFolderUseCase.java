@@ -1,5 +1,7 @@
 package org.service.passwordman.application.usecase.folder;
 
+import org.service.passwordman.domain.model.Folder;
+
 public interface CreateFolderUseCase {
-    void execute(int userId, String folderName, String ipAddress);
+    Folder execute(int userId, String folderName, String ipAddress);
 }

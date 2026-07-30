@@ -9,7 +9,8 @@ public enum SecurityEventType {
     PASSWORD_CHANGED(true),
     VAULT_UNLOCK(true),
     VAULT_LOCK(true),
-    VAULT_AUTO_LOCK(true);
+    VAULT_AUTO_LOCK(true),
+    PASSWORD_COPIED(true);
 
     private final boolean securityEvent;
 

@@ -78,7 +78,9 @@ public class UpdatePasswordEntryService implements UpdatePasswordEntryUseCase {
                     .orElseThrow(() -> new FolderNotFoundException(String.valueOf(folderId)));
         }
 
-        String encryptedPassword = encryptionService.encrypt(dataEncryptionKey, plainPassword);
+        String encryptedPassword = (plainPassword == null || plainPassword.isBlank())
+                ? entry.getEncryptedPassword()
+                : encryptionService.encrypt(dataEncryptionKey, plainPassword);
         String encryptedUsername = encryptionService.encrypt(dataEncryptionKey, username);
         String encryptedNotes = notes == null ? null : encryptionService.encrypt(dataEncryptionKey, notes);
 

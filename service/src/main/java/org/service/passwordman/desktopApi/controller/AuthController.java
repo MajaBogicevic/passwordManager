@@ -59,4 +59,8 @@ public class AuthController {
     public Object refreshToken(RefreshTokenRequest request, String clientIpAddress) {
         return authHandler.refreshTokenSafe(request, clientIpAddress);
     }
+
+    public Object me() {
+        return authHandler.meSafe();
+    }
 }

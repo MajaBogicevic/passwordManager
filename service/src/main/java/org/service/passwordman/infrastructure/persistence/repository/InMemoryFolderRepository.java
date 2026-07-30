@@ -39,7 +39,7 @@ public class InMemoryFolderRepository implements FolderRepository {
     }
 
     @Override
-    public void save(Folder folder) {
+    public Folder save(Folder folder) {
         Folder folderToStore = folder;
 
         if (folder.getId() == 0) {
@@ -52,6 +52,7 @@ public class InMemoryFolderRepository implements FolderRepository {
         }
 
         foldersById.put(folderToStore.getId(), folderToStore);
+        return folderToStore;
     }
 
     @Override

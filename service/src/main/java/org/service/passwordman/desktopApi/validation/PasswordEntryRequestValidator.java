@@ -19,6 +19,8 @@ public class PasswordEntryRequestValidator {
             throw new ValidationException("Create password entry request must not be null.");
         }
 
+        requireNotBlank(request.getPlainPassword(), "Password is required.");
+
         validateCommon(
                 request.getTitle(),
                 request.getUrl(),
@@ -92,7 +94,6 @@ public class PasswordEntryRequestValidator {
     ) {
         requireNotBlank(title, "Title is required.");
         requireNotBlank(username, "Username is required.");
-        requireNotBlank(plainPassword, "Password is required.");
 
         requireMaxLength(title, MAX_TITLE_LENGTH, "Title is too long.");
         requireMaxLength(url, MAX_URL_LENGTH, "URL is too long.");
@@ -100,8 +101,8 @@ public class PasswordEntryRequestValidator {
         requireMaxLength(plainPassword, MAX_PASSWORD_LENGTH, "Password is too long.");
         requireMaxLength(notes, MAX_NOTES_LENGTH, "Notes are too long.");
 
-        if (folderId <= 0) {
-            throw new ValidationException("Folder id must be greater than 0.");
+        if (folderId < 0) {
+            throw new ValidationException("Folder id must not be negative.");
         }
     }
 

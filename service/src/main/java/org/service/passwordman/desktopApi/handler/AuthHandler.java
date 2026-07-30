@@ -20,7 +20,11 @@ import org.service.passwordman.desktopApi.request.RegisterRequest;
 import org.service.passwordman.desktopApi.response.AuthResponse;
 import org.service.passwordman.desktopApi.response.LoginResponse;
 import org.service.passwordman.desktopApi.response.RefreshTokenResponse;
+import org.service.passwordman.desktopApi.response.UserProfileResponse;
 import org.service.passwordman.desktopApi.validation.AuthRequestValidator;
+import org.service.passwordman.domain.exception.ValidationException;
+import org.service.passwordman.domain.model.User;
+import org.service.passwordman.domain.repository.UserRepository;
 import org.service.passwordman.infrastructure.security.CurrentUserProvider;
 
 public class AuthHandler {
@@ -36,6 +40,7 @@ public class AuthHandler {
     private final LogoutUserUseCase logoutUserUseCase;
     private final RefreshTokenStore refreshTokenStore;
     private final RefreshAccessTokenUseCase refreshAccessTokenUseCase;
+    private final UserRepository userRepository;
 
     public AuthHandler(
             RegisterUserUseCase registerUserUseCase,
@@ -48,7 +53,8 @@ public class AuthHandler {
             CurrentUserProvider currentUserProvider,
             LogoutUserUseCase logoutUserUseCase,
             RefreshTokenStore refreshTokenStore,
-            RefreshAccessTokenUseCase refreshAccessTokenUseCase
+            RefreshAccessTokenUseCase refreshAccessTokenUseCase,
+            UserRepository userRepository
 
     ) {
         this.registerUserUseCase = registerUserUseCase;
@@ -62,6 +68,7 @@ public class AuthHandler {
         this.logoutUserUseCase = logoutUserUseCase;
         this.refreshTokenStore = refreshTokenStore;
         this.refreshAccessTokenUseCase = refreshAccessTokenUseCase;
+        this.userRepository = userRepository;
     }
 
     public AuthResponse register(RegisterRequest request, String clientIp) {
@@ -196,5 +203,22 @@ public class AuthHandler {
 
     public Object refreshTokenSafe(RefreshTokenRequest request, String clientIp) {
         return apiHandler.execute(() -> refreshToken(request, clientIp));
+    }
+
+    public UserProfileResponse me() {
+        int currentUserId = currentUserProvider.requireUserId();
+
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ValidationException("User not found."));
+
+        return new UserProfileResponse(
+                user.getUsername(),
+                user.getEmail(),
+                user.getCreatedAt()
+        );
+    }
+
+    public Object meSafe() {
+        return apiHandler.execute(this::me);
     }
 }

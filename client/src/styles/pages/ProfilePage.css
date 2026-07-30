@@ -1,0 +1,148 @@
+.profile-page {
+  padding: 32px;
+  max-width: 480px;
+}
+
+.profile-title {
+  font-size: 24px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0 0 20px;
+  color: var(--foreground);
+}
+
+.profile-page-empty {
+  color: var(--muted-foreground);
+}
+
+.profile-info-card {
+  margin: 20px 0;
+  padding: 20px;
+  border: 3px solid var(--border);
+  background: var(--success);
+  box-shadow: 4px 4px 0 0 var(--border);
+}
+
+.profile-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-info-row:last-of-type {
+  border-bottom: none;
+}
+
+.profile-info-label {
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+.profile-info-value {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.profile-counts-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-count-badge {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  border: 2px solid var(--border);
+  background: var(--secondary-background);
+}
+
+.profile-count-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--main);
+}
+
+.profile-count-label {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+
+.profile-change-password-toggle {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.profile-password-section {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+  margin-top: 0;
+}
+
+.profile-password-section.open {
+  max-height: 600px;
+  opacity: 1;
+  margin-top: 20px;
+}
+
+.profile-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-form-error {
+  color: #000;
+  background: #ffb3b3;
+  border: 2px solid #000;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.profile-form-success {
+  color: #000;
+  background: #b9f6ca;
+  border: 2px solid #000;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.profile-form-submit {
+  width: 100%;
+}
+
+.brutalist-toggle-visibility {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 5;
+  padding: 4px;
+}
+
+.brutalist-toggle-visibility img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}

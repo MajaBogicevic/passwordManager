@@ -142,7 +142,8 @@ public class AuthBeanConfig {
             CurrentUserProvider currentUserProvider,
             LogoutUserUseCase logoutUserUseCase,
             RefreshTokenStore refreshTokenStore,
-            RefreshAccessTokenUseCase refreshAccessTokenUseCase
+            RefreshAccessTokenUseCase refreshAccessTokenUseCase,
+            UserRepository userRepository
     ) {
         return new AuthHandler(
                 registerUserUseCase,
@@ -155,7 +156,8 @@ public class AuthBeanConfig {
                 currentUserProvider,
                 logoutUserUseCase,
                 refreshTokenStore,
-                refreshAccessTokenUseCase
+                refreshAccessTokenUseCase,
+                userRepository
         );
     }
 

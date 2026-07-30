@@ -8,6 +8,7 @@ import org.service.passwordman.application.usecase.entry.DeletePasswordEntryUseC
 import org.service.passwordman.application.usecase.entry.GetEntriesByFolderUseCase;
 import org.service.passwordman.application.usecase.entry.GetEntriesByUserUseCase;
 import org.service.passwordman.application.usecase.entry.GetPasswordEntryUseCase;
+import org.service.passwordman.application.usecase.entry.LogPasswordCopyUseCase;
 import org.service.passwordman.application.usecase.entry.RevealPasswordUseCase;
 import org.service.passwordman.application.usecase.entry.SearchPasswordEntriesUseCase;
 import org.service.passwordman.application.usecase.entry.UpdatePasswordEntryUseCase;
@@ -37,6 +38,7 @@ public class PasswordEntryHandler {
     private final PasswordEntryRequestValidator passwordEntryRequestValidator;
     private final ApiHandler apiHandler;
     private final CurrentUserProvider currentUserProvider;
+    private final LogPasswordCopyUseCase logPasswordCopyUseCase;
 
     public PasswordEntryHandler(
             CreatePasswordEntryUseCase createPasswordEntryUseCase,
@@ -50,7 +52,8 @@ public class PasswordEntryHandler {
             PasswordEntryRequestValidator passwordEntryRequestValidator,
             SearchPasswordEntriesUseCase searchPasswordEntriesUseCase,
             ApiHandler apiHandler,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            LogPasswordCopyUseCase logPasswordCopyUseCase
     ) {
         this.createPasswordEntryUseCase = createPasswordEntryUseCase;
         this.getPasswordEntryUseCase = getPasswordEntryUseCase;
@@ -64,6 +67,7 @@ public class PasswordEntryHandler {
         this.searchPasswordEntriesUseCase = searchPasswordEntriesUseCase;
         this.apiHandler = apiHandler;
         this.currentUserProvider = currentUserProvider;
+        this.logPasswordCopyUseCase = logPasswordCopyUseCase;
     }
 
     public AuthResponse create(CreatePasswordEntryRequest request, String clientIp) {
@@ -210,5 +214,15 @@ public class PasswordEntryHandler {
 
     public Object searchSafe(SearchPasswordEntriesRequest request) {
         return apiHandler.execute(() -> search(request));
+    }
+
+    public AuthResponse logPasswordCopy(int entryId, String ipAddress) {
+        int currentUserId = currentUserProvider.requireUserId();
+        logPasswordCopyUseCase.execute(currentUserId, entryId, ipAddress);
+        return new AuthResponse(true, "Password copy logged.");
+    }
+
+    public Object logPasswordCopySafe(int entryId, String ipAddress) {
+        return apiHandler.execute(() -> logPasswordCopy(entryId, ipAddress));
     }
 }

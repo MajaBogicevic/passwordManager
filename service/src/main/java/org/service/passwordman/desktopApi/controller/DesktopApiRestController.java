@@ -57,6 +57,11 @@ public class DesktopApiRestController {
         return desktopApiController.auth().changePassword(request, httpRequest);
     }
 
+    @GetMapping("/users/me")
+    public Object getCurrentUser() {
+        return desktopApiController.auth().me();
+    }
+
     @PostMapping("/auth/logout")
     public Object logout(
             @RequestBody LogoutRequest request,
@@ -156,6 +161,14 @@ public class DesktopApiRestController {
         return desktopApiController.entries().revealPassword(entryId, httpRequest);
     }
 
+    @PostMapping("/entries/{entryId}/log-copy")
+    public Object logPasswordCopy(
+            @PathVariable int entryId,
+            HttpServletRequest httpRequest
+    ) {
+        return desktopApiController.entries().logPasswordCopy(entryId, httpRequest);
+    }
+
     @PutMapping("/entries")
     public Object updateEntry(
             @RequestBody UpdatePasswordEntryRequest request,
@@ -178,8 +191,15 @@ public class DesktopApiRestController {
     }
 
     @GetMapping("/audit/activity")
-    public Object getSecurityActivity() {
-        return desktopApiController.audit().getSecurityActivity();
+    public Object getSecurityActivity(
+            @RequestParam(required = false) String eventType,
+            @RequestParam(required = false) String outcome,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return desktopApiController.audit().getSecurityActivity(eventType, outcome, fromDate, toDate, page, size);
     }
 
     @GetMapping("/generator/password")

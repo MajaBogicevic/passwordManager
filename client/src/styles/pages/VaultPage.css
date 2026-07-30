@@ -1,0 +1,43 @@
+.vault-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 800px;
+  padding: 32px;
+}
+
+.vault-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vault-page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--foreground);
+}
+
+.vault-page-search {
+  display: flex;
+  gap: 8px;
+}
+
+.vault-search-icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+}
+
+.vault-page-empty {
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+.vault-page-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

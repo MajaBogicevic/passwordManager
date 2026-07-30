@@ -1,0 +1,166 @@
+.audit-page {
+  padding: 32px;
+}
+
+.audit-page-title {
+  font-size: 24px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--foreground);
+}
+
+.audit-page-empty {
+  color: var(--muted-foreground);
+  margin-top: 16px;
+}
+
+.audit-table-wrapper {
+  margin-top: 20px;
+  overflow-x: auto;
+  border: 3px solid #000;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.audit-table th {
+  text-align: left;
+  padding: 12px 16px;
+  background: #000;
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.audit-table td {
+  padding: 10px 16px;
+  border-top: 1px solid #000;
+  white-space: nowrap;
+  color: var(--foreground);
+}
+
+.audit-table tr:nth-child(even) td {
+  background: var(--secondary-background);
+}
+
+.audit-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 2px solid #000;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.audit-badge-success {
+  background: var(--success);
+  color: #000;
+}
+
+.audit-badge-failure {
+  background: var(--destructive);
+  color: #000;
+}
+
+.audit-badge-warning {
+  background: var(--accent);
+  color: #000;
+}
+
+.audit-badge-alert {
+  background: var(--destructive);
+  color: #fff;
+  font-weight: 800;
+}
+
+.audit-badge-default {
+  background: #e5e5e5;
+  color: #000;
+}
+
+.audit-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 16px 0 8px;
+}
+
+.audit-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.audit-filter-field input,
+.audit-filter-field select {
+  padding: 8px 10px;
+  border: 2px solid #000;
+  background: #fff;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+}
+
+.audit-reset-btn {
+  padding: 9px 14px;
+  border: 2px solid #000;
+  background: var(--secondary);
+  color: var(--foreground);
+  font-weight: 700;
+  cursor: pointer;
+  height: fit-content;
+  transition: all 0.15s ease;
+}
+
+.audit-reset-btn:hover {
+  background: #fff;
+  color: #000;
+}
+
+.audit-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.audit-pagination button {
+  min-width: 36px;
+  padding: 8px 10px;
+  border: 2px solid #000;
+  background: #fff;
+  color: var(--foreground);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.audit-pagination button:hover:not(:disabled) {
+  background: var(--main);
+  color: #fff;
+}
+
+.audit-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.audit-page-number-active {
+  background: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+  font-weight: 800;
+}
+
+.audit-pagination-total {
+  margin-left: 10px;
+  white-space: nowrap;
+}

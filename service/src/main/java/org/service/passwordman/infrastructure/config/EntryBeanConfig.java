@@ -10,6 +10,7 @@ import org.service.passwordman.application.service.entry.DeletePasswordEntryServ
 import org.service.passwordman.application.service.entry.GetEntriesByFolderService;
 import org.service.passwordman.application.service.entry.GetEntriesByUserService;
 import org.service.passwordman.application.service.entry.GetPasswordEntryService;
+import org.service.passwordman.application.service.entry.LogPasswordCopyService;
 import org.service.passwordman.application.service.entry.RevealPasswordService;
 import org.service.passwordman.application.service.entry.SearchPasswordEntriesService;
 import org.service.passwordman.application.service.entry.UpdatePasswordEntryService;
@@ -18,6 +19,7 @@ import org.service.passwordman.application.usecase.entry.DeletePasswordEntryUseC
 import org.service.passwordman.application.usecase.entry.GetEntriesByFolderUseCase;
 import org.service.passwordman.application.usecase.entry.GetEntriesByUserUseCase;
 import org.service.passwordman.application.usecase.entry.GetPasswordEntryUseCase;
+import org.service.passwordman.application.usecase.entry.LogPasswordCopyUseCase;
 import org.service.passwordman.application.usecase.entry.RevealPasswordUseCase;
 import org.service.passwordman.application.usecase.entry.SearchPasswordEntriesUseCase;
 import org.service.passwordman.application.usecase.entry.UpdatePasswordEntryUseCase;
@@ -183,6 +185,14 @@ public class EntryBeanConfig {
     }
 
     @Bean
+    public LogPasswordCopyUseCase logPasswordCopyUseCase(
+            PasswordEntryRepository passwordEntryRepository,
+            AuditLogger auditLogger
+    ) {
+        return new LogPasswordCopyService(passwordEntryRepository, auditLogger);
+    }
+
+    @Bean
     public PasswordEntryRequestValidator passwordEntryRequestValidator() {
         return new PasswordEntryRequestValidator();
     }
@@ -205,7 +215,8 @@ public class EntryBeanConfig {
             PasswordEntryRequestValidator passwordEntryRequestValidator,
             SearchPasswordEntriesUseCase searchPasswordEntriesUseCase,
             ApiHandler apiHandler,
-            CurrentUserProvider currentUserProvider
+            CurrentUserProvider currentUserProvider,
+            LogPasswordCopyUseCase logPasswordCopyUseCase
     ) {
         return new PasswordEntryHandler(
                 createPasswordEntryUseCase,
@@ -219,7 +230,8 @@ public class EntryBeanConfig {
                 passwordEntryRequestValidator,
                 searchPasswordEntriesUseCase,
                 apiHandler,
-                currentUserProvider
+                currentUserProvider,
+                logPasswordCopyUseCase
         );
     }
 

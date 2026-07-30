@@ -12,6 +12,7 @@ import org.service.passwordman.desktopApi.mapper.FolderDesktopMapper;
 import org.service.passwordman.desktopApi.request.CreateFolderRequest;
 import org.service.passwordman.desktopApi.request.RenameFolderRequest;
 import org.service.passwordman.desktopApi.response.AuthResponse;
+import org.service.passwordman.desktopApi.response.CreateFolderResponse;
 import org.service.passwordman.desktopApi.response.FolderResponse;
 import org.service.passwordman.desktopApi.validation.FolderRequestValidator;
 import org.service.passwordman.domain.model.Folder;
@@ -51,14 +52,14 @@ public class FolderHandler {
         this.currentUserProvider = currentUserProvider;
     }
 
-    public AuthResponse create(CreateFolderRequest request, String clientIp) {
+    public CreateFolderResponse create(CreateFolderRequest request, String clientIp) {
         folderRequestValidator.validateCreate(request);
         int currentUserId = currentUserProvider.requireUserId();
-        createFolderUseCase.execute(currentUserId, request.getFolderName(), clientIp);
-        return new AuthResponse(true, "Folder successfully created.");
+        Folder createdFolder = createFolderUseCase.execute(currentUserId, request.getFolderName(), clientIp);
+        return new CreateFolderResponse("Folder successfully created.", createdFolder.getId(), createdFolder.getName());
     }
 
-    public AuthResponse create(CreateFolderRequest request) {
+    public CreateFolderResponse create(CreateFolderRequest request) {
         return create(request, null);
     }
 

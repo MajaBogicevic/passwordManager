@@ -10,7 +10,14 @@ public class AuditController {
         this.auditHandler = auditHandler;
     }
 
-    public Object getSecurityActivity() {
-        return auditHandler.getSecurityActivitySafe();
+    public Object getSecurityActivity(
+            String eventType,
+            String outcome,
+            String fromDate,
+            String toDate,
+            int page,
+            int size
+    ) {
+        return auditHandler.getSecurityActivitySafe(eventType, outcome, fromDate, toDate, page, size);
     }
 }

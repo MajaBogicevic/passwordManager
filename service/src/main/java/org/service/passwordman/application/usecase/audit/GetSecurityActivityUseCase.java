@@ -1,9 +1,17 @@
 package org.service.passwordman.application.usecase.audit;
 
-import org.service.passwordman.domain.model.AuditLog;
+import java.time.LocalDateTime;
 
-import java.util.List;
+import org.service.passwordman.application.service.audit.AuditActivityPage;
 
 public interface GetSecurityActivityUseCase {
-    List<AuditLog> execute(int userId);
+    AuditActivityPage execute(
+            int userId,
+            String eventTypeContains,
+            String outcome,
+            LocalDateTime fromTimestamp,
+            LocalDateTime toTimestamp,
+            int page,
+            int size
+    );
 }
